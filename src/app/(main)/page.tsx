@@ -1,7 +1,9 @@
-export default function Home() {
+interface pageProps {}
+
+export default function page() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <h2>this is the data classification</h2>
+    <div>
+      <h2>this is the best thing ever</h2>
     </div>
   );
 }
