@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // uncomment next line if you use Prisma <5.10
+  // directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  first_name    String
+  last_name     String
+  email         String    @unique
+  password      String
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  role          Role      @default(USER)
+  is_active     Boolean   @default(true)
+  profile_image String?
+  bio           String?
+  projects      Project[] @relation("UserProjects")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      Status   @default(ACTIVE)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  owner_id    String
+  owner       User     @relation("UserProjects", fields: [owner_id], references: [id])
+}
+
+enum Status {
+  ACTIVE
+  ARCHIVED
+  COMPLETED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
