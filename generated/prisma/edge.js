@@ -156,7 +156,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\dell\\Documents\\GitHub\\data-classification\\src\\generated\\prisma",
+      "value": "C:\\Users\\dell\\Documents\\GitHub\\data-classification\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -174,10 +174,10 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": "../../.env",
+    "schemaEnvPath": "../../.env"
   },
-  "relativePath": "../../../prisma",
+  "relativePath": "../../prisma",
   "clientVersion": "6.7.0",
   "engineVersion": "3cff47a7f5d65c3ea74883f1d736e41d68ce91ed",
   "datasourceNames": [
@@ -193,8 +193,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  // uncomment next line if you use Prisma <5.10\n  // directUrl = env(\"DATABASE_URL_UNPOOLED\")\n}\n\nmodel User {\n  id            String    @id @default(uuid())\n  first_name    String\n  last_name     String\n  email         String    @unique\n  password      String\n  created_at    DateTime  @default(now())\n  updated_at    DateTime  @updatedAt\n  role          Role      @default(USER)\n  is_active     Boolean   @default(true)\n  profile_image String?\n  bio           String?\n  projects      Project[] @relation(\"UserProjects\")\n}\n\nmodel Project {\n  id          String   @id @default(uuid())\n  title       String\n  description String?\n  status      Status   @default(ACTIVE)\n  created_at  DateTime @default(now())\n  updated_at  DateTime @updatedAt\n  owner_id    String\n  owner       User     @relation(\"UserProjects\", fields: [owner_id], references: [id])\n}\n\nenum Status {\n  ACTIVE\n  ARCHIVED\n  COMPLETED\n}\n\nenum Role {\n  USER\n  ADMIN\n}\n",
-  "inlineSchemaHash": "80f15393689ee108d8021ed143cd89afd90f66f485d639bd866161e0b112da7b",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  // uncomment next line if you use Prisma <5.10\n  // directUrl = env(\"DATABASE_URL_UNPOOLED\")\n}\n\nmodel User {\n  id            String    @id @default(uuid())\n  first_name    String\n  last_name     String\n  email         String    @unique\n  password      String\n  created_at    DateTime  @default(now())\n  updated_at    DateTime  @updatedAt\n  role          Role      @default(USER)\n  is_active     Boolean   @default(true)\n  profile_image String?\n  bio           String?\n  projects      Project[] @relation(\"UserProjects\")\n}\n\nmodel Project {\n  id          String   @id @default(uuid())\n  title       String\n  description String?\n  status      Status   @default(ACTIVE)\n  created_at  DateTime @default(now())\n  updated_at  DateTime @updatedAt\n  owner_id    String\n  owner       User     @relation(\"UserProjects\", fields: [owner_id], references: [id])\n}\n\nenum Status {\n  ACTIVE\n  ARCHIVED\n  COMPLETED\n}\n\nenum Role {\n  USER\n  ADMIN\n}\n",
+  "inlineSchemaHash": "cf87d0a8385b4c94b8489ad07e44f29deb25fd443c481a2e634bed5e68593a2f",
   "copyEngine": true
 }
 config.dirname = '/'

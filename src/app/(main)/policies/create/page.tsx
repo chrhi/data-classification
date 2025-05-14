@@ -1,8 +1,4 @@
-import { PolicyGenerator } from "@/components/forms/policy-generator";
-
-// interface pageProps {
-
-// }
+import { PolicyGenerator } from "@/components/policy-generator";
 
 export default function page() {
   return (
