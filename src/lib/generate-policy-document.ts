@@ -495,10 +495,13 @@ export async function generatePolicyDocument(
 
   // Generate the document buffer
   const buffer = await Packer.toBuffer(doc);
-  //@ts-expect-error this is a used
-  return new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  });
+
+  return (
+    //@ts-expect-error this is a
+    new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    })
+  );
 }
 
 // Helper function to trigger download in browser
