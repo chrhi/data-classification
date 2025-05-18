@@ -492,7 +492,7 @@ export async function generatePolicyDocument(
 
   // Generate the document buffer
   const buffer = await Packer.toBuffer(doc);
-  //@ts-expect-error this is a type error
+  //@ts-expect-error this is a used
   return new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   });
