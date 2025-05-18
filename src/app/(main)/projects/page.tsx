@@ -7,7 +7,6 @@ export default async function Page() {
   if (data.user) {
     return <PageViewProjects userId={data.user?.id} />;
   } else {
-    console.log(data);
     return <div>error when fetching the projects</div>;
   }
 }

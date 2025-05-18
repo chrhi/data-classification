@@ -12,11 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow } from "date-fns";
-import { Project } from "@/types";
+// import { formatDistanceToNow } from "date-fns";
+import { Organization } from "@/types";
+import Link from "next/link";
 
 // Status badge component
-const StatusBadge = ({ status }: { status: Project["status"] }) => {
+const StatusBadge = ({ status }: { status: Organization["status"] }) => {
   const variants = {
     ACTIVE: "default",
     COMPLETED: "secondary",
@@ -36,18 +37,18 @@ const StatusBadge = ({ status }: { status: Project["status"] }) => {
   );
 };
 
-export const columns: ColumnDef<Project>[] = [
+export const columns: ColumnDef<Organization>[] = [
   {
     accessorKey: "title",
-    header: "Project Title",
+    header: "Organization",
     cell: ({ row }) => {
-      const project = row.original;
+      const org = row.original;
       return (
         <div className="flex flex-col">
-          <span className="font-medium">{project.title}</span>
-          {project.description && (
+          <span className="font-medium">{org.title}</span>
+          {org.description && (
             <span className="text-sm text-muted-foreground truncate max-w-[300px]">
-              {project.description}
+              {org.description}
             </span>
           )}
         </div>
@@ -58,9 +59,7 @@ export const columns: ColumnDef<Project>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id));
-    },
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
     accessorKey: "owner",
@@ -77,40 +76,40 @@ export const columns: ColumnDef<Project>[] = [
       );
     },
   },
-  {
-    accessorKey: "created_at",
-    header: "Created",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
-      return (
-        <div className="flex flex-col">
-          <span className="text-sm">
-            {formatDistanceToNow(date, { addSuffix: true })}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {date.toLocaleDateString()}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "updated_at",
-    header: "Last Updated",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("updated_at"));
-      return (
-        <span className="text-sm">
-          {formatDistanceToNow(date, { addSuffix: true })}
-        </span>
-      );
-    },
-  },
+  // {
+  //   accessorKey: "created_at",
+  //   header: "Created",
+  //   cell: ({ row }) => {
+  //     const date = new Date(row.getValue("created_at"));
+  //     return (
+  //       <div className="flex flex-col">
+  //         <span className="text-sm">
+  //           {formatDistanceToNow(date, { addSuffix: true })}
+  //         </span>
+  //         <span className="text-xs text-muted-foreground">
+  //           {date.toLocaleDateString()}
+  //         </span>
+  //       </div>
+  //     );
+  //   },
+  // },
+  // {
+  //   accessorKey: "updated_at",
+  //   header: "Last Updated",
+  //   cell: ({ row }) => {
+  //     const date = new Date(row.getValue("updated_at"));
+  //     return (
+  //       <span className="text-sm">
+  //         {formatDistanceToNow(date, { addSuffix: true })}
+  //       </span>
+  //     );
+  //   },
+  // },
   {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
-      const project = row.original;
+      const org = row.original;
 
       return (
         <DropdownMenu>
@@ -123,23 +122,26 @@ export const columns: ColumnDef<Project>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(project.id)}
+              onClick={() => navigator.clipboard.writeText(org.id)}
             >
-              Copy project ID
+              Copy organization ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
-              <Eye className="mr-2 h-4 w-4" />
-              View project
-            </DropdownMenuItem>
+            <Link href={`/projects/${row.original.id}/step1`}>
+              <DropdownMenuItem className="cursor-pointer">
+                <Eye className="mr-2 h-4 w-4" />
+                Continue policy
+              </DropdownMenuItem>
+            </Link>
+
             <DropdownMenuItem className="cursor-pointer">
               <Edit className="mr-2 h-4 w-4" />
-              Edit project
+              Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer text-red-600">
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete project
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

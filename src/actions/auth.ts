@@ -95,7 +95,7 @@ export const loginToYourAccountAction = async (formData: FormData) => {
       user: {
         id: user.id,
         email: user.email,
-        name: `${user.first_name} ${user.last_name}`,
+        name: `${user.firstName} ${user.lastName}`,
       },
     };
   } catch (error) {
@@ -149,8 +149,8 @@ export const createAccountAction = async (formData: FormData) => {
     const newUser = await db.user.create({
       data: {
         id: uuidv4(),
-        first_name: firstName,
-        last_name: lastName,
+        firstName: firstName,
+        lastName: lastName,
         email,
         password: hashedPassword,
       },
@@ -185,7 +185,7 @@ export const createAccountAction = async (formData: FormData) => {
       user: {
         id: newUser.id,
         email: newUser.email,
-        name: `${newUser.first_name} ${newUser.last_name}`,
+        name: `${newUser.firstName} ${newUser.lastName}`,
       },
     };
   } catch (error) {
@@ -234,8 +234,8 @@ export const getCurrentUser = async () => {
       select: {
         id: true,
         email: true,
-        first_name: true,
-        last_name: true,
+        firstName: true,
+        lastName: true,
         role: true,
       },
     });

@@ -1,32 +1,36 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { Organization } from "@/types";
 
-const createProjectSchema = z.object({
+// Validation schemas
+const createOrganizationSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   owner_id: z.string().uuid("Invalid user ID"),
 });
 
-const getProjectByIdSchema = z.object({
-  projectId: z.string().uuid("Invalid project ID"),
+const getOrganizationByIdSchema = z.object({
+  organizationId: z.string().uuid("Invalid organization ID"),
 });
 
-const getAllProjectsSchema = z.object({
+const getAllOrganizationsSchema = z.object({
   userId: z.string().uuid("Invalid user ID"),
 });
 
-const updateProjectSchema = z.object({
-  projectId: z.string().uuid("Invalid project ID"),
+const updateOrganizationSchema = z.object({
+  organizationId: z.string().uuid("Invalid organization ID"),
   title: z.string().min(1, "Title is required").optional(),
   description: z.string().optional(),
   status: z.enum(["ACTIVE", "ARCHIVED", "COMPLETED"]).optional(),
 });
 
-// Create a new project
-export const createProjectAction = async (formData: FormData) => {
+// Create a new organization
+
+export const createOrganizationAction = async (formData: FormData) => {
   try {
     const rawData = {
       title: formData.get("title") as string,
@@ -34,33 +38,54 @@ export const createProjectAction = async (formData: FormData) => {
       owner_id: formData.get("owner_id") as string,
     };
 
-    const validatedData = createProjectSchema.parse(rawData);
+    const validatedData = createOrganizationSchema.parse(rawData);
 
-    // Check if user exists
     const user = await db.user.findUnique({
       where: { id: validatedData.owner_id },
     });
 
     if (!user) {
-      return {
-        success: false,
-        error: "User not found",
-      };
+      return { success: false, error: "User not found" };
     }
 
-    const project = await db.project.create({
+    const organization = await db.organization.create({
       data: {
         title: validatedData.title,
         description: validatedData.description,
-        owner_id: validatedData.owner_id,
+        ownerId: validatedData.owner_id,
       },
     });
 
-    revalidatePath("/projects");
+    const organizationId = organization.id;
+
+    // Step 2: Create FirstStep, SecondStep, and ThirdStep concurrently
+    await Promise.all([
+      db.firstStep.create({
+        data: {
+          organizationId,
+          data: {}, // Default empty JSON or prefill initial structure
+        },
+      }),
+      db.secondStep.create({
+        data: {
+          organizationId,
+          data: {}, // Default empty JSON or prefill initial structure
+        },
+      }),
+      db.thirdStep.create({
+        data: {
+          organizationId,
+          data: {}, // Default empty JSON or prefill initial structure
+        },
+      }),
+    ]);
+
+    // Step 3: Revalidate cache
+    revalidatePath("/organizations");
 
     return {
       success: true,
-      data: project,
+      data: organization,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -71,41 +96,37 @@ export const createProjectAction = async (formData: FormData) => {
       };
     }
 
-    console.error("Error creating project:", error);
+    console.error("Error creating organization:", error);
     return {
       success: false,
-      error: "Failed to create project",
+      error: "Failed to create organization",
     };
   }
 };
 
-// Get all projects for a specific user
-export const getAllProjectsAction = async (userId: string) => {
+// Get all organizations for a user
+export const getAllOrganizationsAction = async (userId: string) => {
   try {
-    const validatedData = getAllProjectsSchema.parse({ userId });
+    const validatedData = getAllOrganizationsSchema.parse({ userId });
 
-    const projects = await db.project.findMany({
-      where: {
-        owner_id: validatedData.userId,
-      },
+    const organizations = await db.organization.findMany({
+      where: { ownerId: validatedData.userId },
       include: {
         owner: {
           select: {
             id: true,
-            first_name: true,
-            last_name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
       },
-      orderBy: {
-        created_at: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
     return {
       success: true,
-      data: projects,
+      data: organizations as unknown as Organization[],
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -116,123 +137,110 @@ export const getAllProjectsAction = async (userId: string) => {
       };
     }
 
-    console.error("Error fetching projects:", error);
+    console.error("Error fetching organizations:", error);
     return {
       success: false,
-      error: "Failed to fetch projects",
+      error: "Failed to fetch organizations",
     };
   }
 };
 
-// Get a specific project by ID
-export const getProjectByIdAction = async (projectId: string) => {
+// Get a specific organization by ID
+export const getOrganizationByIdAction = async (organizationId: string) => {
   try {
-    const validatedData = getProjectByIdSchema.parse({ projectId });
+    const validatedData = getOrganizationByIdSchema.parse({ organizationId });
 
-    const project = await db.project.findUnique({
-      where: {
-        id: validatedData.projectId,
-      },
+    const organization = await db.organization.findUnique({
+      where: { id: validatedData.organizationId },
       include: {
         owner: {
           select: {
             id: true,
-            first_name: true,
-            last_name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
       },
     });
 
-    if (!project) {
-      return {
-        success: false,
-        error: "Project not found",
-      };
+    if (!organization) {
+      return { success: false, error: "Organization not found" };
     }
 
     return {
       success: true,
-      data: project,
+      data: organization,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: "Invalid project ID",
+        error: "Invalid organization ID",
         details: error.errors,
       };
     }
 
-    console.error("Error fetching project:", error);
+    console.error("Error fetching organization:", error);
     return {
       success: false,
-      error: "Failed to fetch project",
+      error: "Failed to fetch organization",
     };
   }
 };
 
-// Update a project
-export const updateProjectAction = async (formData: FormData) => {
+// Update an organization
+export const updateOrganizationAction = async (formData: FormData) => {
   try {
     const rawData = {
-      projectId: formData.get("projectId") as string,
+      organizationId: formData.get("organizationId") as string,
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       status: formData.get("status") as string,
     };
 
-    // Remove empty strings and convert to proper types
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
     if (rawData.title) updateData.title = rawData.title;
     if (rawData.description !== undefined)
       updateData.description = rawData.description;
     if (rawData.status) updateData.status = rawData.status;
 
-    const validatedData = updateProjectSchema.parse({
-      projectId: rawData.projectId,
+    const validatedData = updateOrganizationSchema.parse({
+      organizationId: rawData.organizationId,
       ...updateData,
     });
 
-    // Check if project exists
-    const existingProject = await db.project.findUnique({
-      where: { id: validatedData.projectId },
+    const existingOrganization = await db.organization.findUnique({
+      where: { id: validatedData.organizationId },
     });
 
-    if (!existingProject) {
-      return {
-        success: false,
-        error: "Project not found",
-      };
+    if (!existingOrganization) {
+      return { success: false, error: "Organization not found" };
     }
 
-    const { projectId, ...updateFields } = validatedData;
+    const { organizationId, ...updateFields } = validatedData;
 
-    const updatedProject = await db.project.update({
-      where: {
-        id: projectId,
-      },
+    const updatedOrganization = await db.organization.update({
+      where: { id: organizationId },
       data: updateFields,
       include: {
         owner: {
           select: {
             id: true,
-            first_name: true,
-            last_name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
       },
     });
 
-    revalidatePath("/projects");
-    revalidatePath(`/projects/${projectId}`);
+    revalidatePath("/organizations");
+    revalidatePath(`/organizations/${organizationId}`);
 
     return {
       success: true,
-      data: updatedProject,
+      data: updatedOrganization,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -243,56 +251,50 @@ export const updateProjectAction = async (formData: FormData) => {
       };
     }
 
-    console.error("Error updating project:", error);
+    console.error("Error updating organization:", error);
     return {
       success: false,
-      error: "Failed to update project",
+      error: "Failed to update organization",
     };
   }
 };
 
-// Delete a project
-export const deleteProjectAction = async (projectId: string) => {
+// Delete an organization
+export const deleteOrganizationAction = async (organizationId: string) => {
   try {
-    const validatedData = getProjectByIdSchema.parse({ projectId });
+    const validatedData = getOrganizationByIdSchema.parse({ organizationId });
 
-    // Check if project exists
-    const existingProject = await db.project.findUnique({
-      where: { id: validatedData.projectId },
+    const existingOrganization = await db.organization.findUnique({
+      where: { id: validatedData.organizationId },
     });
 
-    if (!existingProject) {
-      return {
-        success: false,
-        error: "Project not found",
-      };
+    if (!existingOrganization) {
+      return { success: false, error: "Organization not found" };
     }
 
-    await db.project.delete({
-      where: {
-        id: validatedData.projectId,
-      },
+    await db.organization.delete({
+      where: { id: validatedData.organizationId },
     });
 
-    revalidatePath("/projects");
+    revalidatePath("/organizations");
 
     return {
       success: true,
-      message: "Project deleted successfully",
+      message: "Organization deleted successfully",
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: "Invalid project ID",
+        error: "Invalid organization ID",
         details: error.errors,
       };
     }
 
-    console.error("Error deleting project:", error);
+    console.error("Error deleting organization:", error);
     return {
       success: false,
-      error: "Failed to delete project",
+      error: "Failed to delete organization",
     };
   }
 };

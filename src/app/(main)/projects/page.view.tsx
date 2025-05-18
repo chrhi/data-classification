@@ -4,78 +4,75 @@ import { useQuery } from "@tanstack/react-query";
 import { columns } from "@/components/table/columns";
 import { DataTable } from "@/components/table/data-table";
 import { Button } from "@/components/ui/button";
-import { getAllProjectsAction } from "@/actions/project";
+import { getAllOrganizationsAction } from "@/actions/project"; // You may also rename the file for consistency
 import { Loader2, RefreshCw } from "lucide-react";
-import CreateProject from "@/components/modals/create-project";
+import CreateOrganization from "@/components/modals/create-organization";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-// import {type Project } from "@/types/index"
 
-interface PageViewProjectsProps {
-  userId: string; // You'll need to pass the current user's ID
+interface PageViewOrganizationsProps {
+  userId: string;
 }
 
-export default function PageViewProjects({ userId }: PageViewProjectsProps) {
+export default function PageViewOrganizations({
+  userId,
+}: PageViewOrganizationsProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // React Query to fetch projects
   const {
-    data: projectsResponse,
+    data: organizationsResponse,
     isLoading,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["projects", userId],
+    queryKey: ["organizations", userId],
     queryFn: async () => {
-      const result = await getAllProjectsAction(userId);
+      const result = await getAllOrganizationsAction(userId);
       if (!result.success) {
-        throw new Error(result.error || "Failed to fetch projects");
+        throw new Error(result.error || "Failed to fetch organizations");
       }
       return result.data;
     },
-    enabled: !!userId, // Only run query if userId is provided
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Handle manual refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await refetch();
-      toast.success("Projects refreshed successfully");
+      toast.success("Organizations refreshed successfully");
     } catch (error) {
       console.log(error);
-      toast.error("Failed to refresh projects");
+      toast.error("Failed to refresh organizations");
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen h-fit flex flex-col p-8">
+      <div className="w-full min-h-screen flex flex-col p-8">
         <div className="w-full h-[100px] flex items-center justify-between">
-          <h2 className="font-bold text-2xl">Projects</h2>
+          <h2 className="font-bold text-2xl">Organizations</h2>
         </div>
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Loading projects...</p>
+            <p className="text-muted-foreground">Loading organizations...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Error state
   if (isError) {
     return (
-      <div className="w-full min-h-screen h-fit flex flex-col p-8">
+      <div className="w-full min-h-screen flex flex-col p-8">
         <div className="w-full h-[100px] flex items-center justify-between">
-          <h2 className="font-bold text-2xl">Projects</h2>
+          <h2 className="font-bold text-2xl">Organizations</h2>
         </div>
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4 max-w-md text-center">
@@ -94,7 +91,9 @@ export default function PageViewProjects({ userId }: PageViewProjectsProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold">Failed to load projects</h3>
+            <h3 className="text-lg font-semibold">
+              Failed to load organizations
+            </h3>
             <p className="text-muted-foreground">
               {error instanceof Error
                 ? error.message
@@ -110,16 +109,16 @@ export default function PageViewProjects({ userId }: PageViewProjectsProps) {
     );
   }
 
-  // Success state with data
-  const projects = projectsResponse || [];
+  const organizations = organizationsResponse || [];
 
   return (
-    <div className="w-full min-h-screen h-fit flex flex-col p-8">
+    <div className="w-full min-h-screen flex flex-col p-8">
       <div className="w-full h-[100px] flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="font-bold text-2xl">Projects</h2>
+          <h2 className="font-bold text-2xl">Organizations</h2>
           <span className="text-sm text-muted-foreground">
-            ({projects.length} {projects.length === 1 ? "project" : "projects"})
+            ({organizations.length}{" "}
+            {organizations.length === 1 ? "organization" : "organizations"})
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -135,12 +134,11 @@ export default function PageViewProjects({ userId }: PageViewProjectsProps) {
             />
             Refresh
           </Button>
-          <CreateProject userId={userId} />
+          <CreateOrganization userId={userId} />
         </div>
       </div>
 
-      {/* Empty state */}
-      {projects.length === 0 ? (
+      {organizations.length === 0 ? (
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4 max-w-md text-center">
             <div className="text-muted-foreground">
@@ -158,20 +156,19 @@ export default function PageViewProjects({ userId }: PageViewProjectsProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold">No projects yet</h3>
+            <h3 className="text-xl font-semibold">No organizations yet</h3>
             <p className="text-muted-foreground">
-              Get started by creating your first project. Organize your work and
-              track your progress.
+              Get started by creating your first organization to manage your
+              teams and resources.
             </p>
-            <CreateProject
+            <CreateOrganization
               userId={userId}
-              triggerText="Create your first project"
+              triggerText="Create your first organization"
             />
           </div>
         </div>
       ) : (
-        /* Data table */
-        <DataTable columns={columns} data={projects} />
+        <DataTable columns={columns} data={organizations} />
       )}
     </div>
   );

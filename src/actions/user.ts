@@ -9,15 +9,15 @@ import { jwtVerify } from "jose";
 // User validation schema
 const userSchema = z.object({
   id: z.string().uuid(),
-  first_name: z.string(),
-  last_name: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
   email: z.string().email(),
   role: z.enum(["USER", "ADMIN"]),
-  is_active: z.boolean(),
-  profile_image: z.string().nullable(),
+  isActive: z.boolean(),
+  profileImage: z.string().nullable(),
   bio: z.string().nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 // Get current user from JWT token
@@ -68,19 +68,19 @@ export const getCurrentUserAction = async () => {
     const user = await db.user.findUnique({
       where: {
         id: userId,
-        is_active: true, // Only return active users
+        isActive: true, // Only return active users
       },
       select: {
         id: true,
-        first_name: true,
-        last_name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
-        is_active: true,
-        profile_image: true,
+        isActive: true,
+        profileImage: true,
         bio: true,
-        created_at: true,
-        updated_at: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 

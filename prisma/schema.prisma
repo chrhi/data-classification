@@ -3,85 +3,84 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
-  // uncomment next line if you use Prisma <5.10
-  // directUrl = env("DATABASE_URL_UNPOOLED")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String    @id @default(uuid())
-  first_name   String
-  last_name    String
-  email        String    @unique
-  password     String
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-  role         Role      @default(USER)
-  is_active    Boolean   @default(true)
-  profile_image String?
-  bio          String?
-  projects     Project[] @relation("UserProjects")
+  id             String         @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String         @unique
+  password       String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  role           Role           @default(USER)
+  isActive       Boolean        @default(true)
+  profileImage   String?
+  bio            String?
+  organizations  Organization[] @relation("UserOrganizations")
 
-  Policy Policy[] @relation("UserPolicies")
+  @@map("users")
 }
 
+model Organization {
+  id            String       @id @default(uuid())
+  title         String
+  description   String?
+  status        Status       @default(ACTIVE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  ownerId       String
+  owner         User         @relation("UserOrganizations", fields: [ownerId], references: [id], onDelete: Cascade)
+  firstStep     FirstStep?
+  secondStep    SecondStep?
+  thirdStep     ThirdStep?
 
-model Project {
-  id          String    @id @default(uuid())
-  title       String
-  description String?
-  status      Status    @default(ACTIVE)
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  owner_id    String
-  owner       User      @relation("UserProjects", fields: [owner_id], references: [id])
-  
+  @@map("organizations")
 }
 
+model FirstStep {
+  id              String       @id @default(uuid())
+  organizationId  String       @unique
+  data            Json
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-
-model Policy {
-  id                    String   @id @default(uuid())
-  title                 String
-  status                Status   @default(ACTIVE)
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
-  
-  // Policy specific fields from your form schema
-  objective             String
-  stakeholders          String[] // Array of strings
-  business_processes    String[] // Array of strings
-  data_types            String[] // Array of strings
-  departments           String[] // Array of strings
-  has_data_inventory    Boolean?
-  data_inventory_link   String?
-  needs_guidance        Boolean?
-  data_value_assessment String[] // Array of strings
-  business_impacts      Json     // JSON object for key-value pairs
-  sensitivity_levels    String[] // Array of strings
-  custom_classification Json     // JSON object for classification structure
-  organization_name     String
-  version               String   @default("1.0")
-  approval_roles        String[] // Array of strings
-  
-  // Relationship to user who created the policy
-  created_by_id         String
-  created_by            User     @relation("UserPolicies", fields: [created_by_id], references: [id])
-  
-  @@index([created_by_id])
-  @@index([status])
-  @@index([created_at])
+  @@map("first_steps")
 }
 
+model SecondStep {
+  id              String       @id @default(uuid())
+  organizationId  String       @unique
+  data            Json
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("second_steps")
+}
+
+model ThirdStep {
+  id              String       @id @default(uuid())
+  organizationId  String       @unique
+  data            Json
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("third_steps")
+}
 
 enum Status {
   ACTIVE
   ARCHIVED
   COMPLETED
 }
-
 
 enum Role {
   USER

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, FileText, FolderKanban, User, Menu } from "lucide-react";
+import { Home, FolderKanban, User, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -29,13 +29,9 @@ export default function Sidebar() {
 
   const navItems = [
     { name: "Home", path: "/", icon: <Home className="w-5 h-5" /> },
+
     {
-      name: "Policies",
-      path: "/policies",
-      icon: <FileText className="w-5 h-5" />,
-    },
-    {
-      name: "Projects",
+      name: "Prganizations",
       path: "/projects",
       icon: <FolderKanban className="w-5 h-5" />,
     },
@@ -116,7 +112,7 @@ export default function Sidebar() {
               </div>
             </SheetContent>
           </Sheet>
-          
+
           <span className="ml-4 text-lg font-bold text-primary font-poppins italic">
             data classification
           </span>

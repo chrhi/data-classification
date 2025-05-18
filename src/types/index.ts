@@ -1,11 +1,10 @@
-export type Project = {
+export type Organization = {
   id: string;
   title: string;
-  description: string | null;
+  description?: string;
   status: "ACTIVE" | "ARCHIVED" | "COMPLETED";
-  created_at: Date;
-  updated_at: Date;
-  owner_id: string;
+  created_at: string; // ISO string
+  updated_at: string; // ISO string
   owner: {
     id: string;
     first_name: string;

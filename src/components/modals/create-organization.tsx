@@ -13,10 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
-import { createProjectAction } from "@/actions/project";
+import { createOrganizationAction } from "@/actions/project";
 import { toast } from "react-hot-toast";
 
-interface CreateProjectProps {
+interface CreateOrganizationProps {
   userId: string;
   triggerText?: string;
   triggerVariant?:
@@ -28,11 +28,11 @@ interface CreateProjectProps {
     | "link";
 }
 
-export default function CreateProject({
+export default function CreateOrganization({
   userId,
-  triggerText = "Create Project",
+  triggerText = "Create Organization",
   triggerVariant = "default",
-}: CreateProjectProps) {
+}: CreateOrganizationProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -41,7 +41,7 @@ export default function CreateProject({
 
   const queryClient = useQueryClient();
 
-  const createProjectMutation = useMutation({
+  const createOrganizationMutation = useMutation({
     mutationFn: async (data: {
       title: string;
       description: string;
@@ -52,28 +52,24 @@ export default function CreateProject({
       formData.append("description", data.description);
       formData.append("owner_id", data.owner_id);
 
-      const result = await createProjectAction(formData);
+      const result = await createOrganizationAction(formData);
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to create project");
+        throw new Error(result.error || "Failed to create organization");
       }
 
       return result.data;
     },
     onSuccess: () => {
-      // Invalidate and refetch projects query
-      queryClient.invalidateQueries({ queryKey: ["projects", userId] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["organizations", userId] });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
 
-      // Reset form and close modal
       setFormData({ title: "", description: "" });
       setOpen(false);
-
-      // Show success message
-      toast.success(`Project  created successfully!`);
+      toast.success(`Organization created successfully!`);
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create project: ${error.message}`);
+      toast.error(`Failed to create organization: ${error.message}`);
     },
   });
 
@@ -81,11 +77,11 @@ export default function CreateProject({
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error("Title is required");
+      toast.error("Name is required");
       return;
     }
 
-    createProjectMutation.mutate({
+    createOrganizationMutation.mutate({
       title: formData.title.trim(),
       description: formData.description.trim(),
       owner_id: userId,
@@ -112,23 +108,23 @@ export default function CreateProject({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>Create New Organization</DialogTitle>
           <DialogDescription>
-            Create a new project to organize and track your work. You can always
-            edit these details later.
+            Create a new organization to manage your teams and projects. You can
+            always update details later.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Project Title *</Label>
+            <Label htmlFor="title">Organization Name *</Label>
             <Input
               id="title"
               name="title"
-              placeholder="Enter project title"
+              placeholder="Enter organization name"
               value={formData.title}
               onChange={handleInputChange}
-              disabled={createProjectMutation.isPending}
+              disabled={createOrganizationMutation.isPending}
               className="w-full"
             />
           </div>
@@ -138,10 +134,10 @@ export default function CreateProject({
             <Textarea
               id="description"
               name="description"
-              placeholder="Describe your project..."
+              placeholder="Describe your organization..."
               value={formData.description}
               onChange={handleInputChange}
-              disabled={createProjectMutation.isPending}
+              disabled={createOrganizationMutation.isPending}
               className="w-full min-h-[100px] resize-none"
             />
           </div>
@@ -151,21 +147,21 @@ export default function CreateProject({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={createProjectMutation.isPending}
+              disabled={createOrganizationMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={
-                createProjectMutation.isPending || !formData.title.trim()
+                createOrganizationMutation.isPending || !formData.title.trim()
               }
               className="gap-2"
             >
-              {createProjectMutation.isPending && (
+              {createOrganizationMutation.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              Create Project
+              Create Organization
             </Button>
           </div>
         </form>
