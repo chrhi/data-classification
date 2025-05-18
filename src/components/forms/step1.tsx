@@ -15,18 +15,71 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface Step1Props {}
+// Type definitions
+export type Step1Data = {
+  primaryObjectives: {
+    selected: string[];
+    other: string[];
+  };
+  organizationSize: string;
+  stakeholders: {
+    selected: string[];
+    other: string[];
+  };
+  regulations: {
+    selected: string[];
+    other: string[];
+  };
+};
 
-export default function Step1({}: Step1Props) {
-  const [formData, setFormData] = useState({
-    primaryObjectives: [],
-    primaryObjectivesOther: [],
-    organizationSize: "",
-    stakeholders: [],
-    stakeholdersOther: [],
-    regulations: [],
-    regulationsOther: [],
+export type Step1Result = {
+  step: number;
+  title: string;
+  data: Step1Data;
+  timestamp: string;
+};
+
+interface FormData {
+  primaryObjectives: string[];
+  primaryObjectivesOther: string[];
+  organizationSize: string;
+  stakeholders: string[];
+  stakeholdersOther: string[];
+  regulations: string[];
+  regulationsOther: string[];
+}
+
+type OtherCategory =
+  | "primaryObjectivesOther"
+  | "stakeholdersOther"
+  | "regulationsOther";
+
+interface Step1Props {
+  initialData?: Step1Result | null;
+}
+
+export default function Step1({ initialData }: Step1Props) {
+  const [formData, setFormData] = useState<FormData>(() => {
+    if (initialData) {
+      return {
+        primaryObjectives: initialData.data.primaryObjectives.selected,
+        primaryObjectivesOther: initialData.data.primaryObjectives.other,
+        organizationSize: initialData.data.organizationSize,
+        stakeholders: initialData.data.stakeholders.selected,
+        stakeholdersOther: initialData.data.stakeholders.other,
+        regulations: initialData.data.regulations.selected,
+        regulationsOther: initialData.data.regulations.other,
+      };
+    }
+    return {
+      primaryObjectives: [],
+      primaryObjectivesOther: [],
+      organizationSize: "",
+      stakeholders: [],
+      stakeholdersOther: [],
+      regulations: [],
+      regulationsOther: [],
+    };
   });
 
   const primaryObjectiveOptions = [
@@ -54,10 +107,7 @@ export default function Step1({}: Step1Props) {
     "Basel III",
   ];
 
-  const handleObjectiveChange = (
-    objective: string,
-    checked: string | boolean
-  ) => {
+  const handleObjectiveChange = (objective: string, checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
       primaryObjectives: checked
@@ -66,10 +116,7 @@ export default function Step1({}: Step1Props) {
     }));
   };
 
-  const handleStakeholderChange = (
-    stakeholder: string,
-    checked: string | boolean
-  ) => {
+  const handleStakeholderChange = (stakeholder: string, checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
       stakeholders: checked
@@ -78,10 +125,7 @@ export default function Step1({}: Step1Props) {
     }));
   };
 
-  const handleRegulationChange = (
-    regulation: string,
-    checked: string | boolean
-  ) => {
+  const handleRegulationChange = (regulation: string, checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
       regulations: checked
@@ -90,32 +134,33 @@ export default function Step1({}: Step1Props) {
     }));
   };
 
-  // Functions for handling multiple "Other" items
-  const addOtherItem = (category: string) => {
+  const addOtherItem = (category: OtherCategory) => {
     setFormData((prev) => ({
       ...prev,
       [category]: [...prev[category], ""],
     }));
   };
 
-  const updateOtherItem = (category: string, index: number, value: string) => {
+  const updateOtherItem = (
+    category: OtherCategory,
+    index: number,
+    value: string
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      [category]: prev[category].map((item: any, i: any) =>
-        i === index ? value : item
-      ),
+      [category]: prev[category].map((item, i) => (i === index ? value : item)),
     }));
   };
 
-  const removeOtherItem = (category: string, index: number) => {
+  const removeOtherItem = (category: OtherCategory, index: number) => {
     setFormData((prev) => ({
       ...prev,
-      [category]: prev[category].filter((_: any, i: any) => i !== index),
+      [category]: prev[category].filter((_, i) => i !== index),
     }));
   };
 
   const handleSubmit = () => {
-    const results = {
+    const results: Step1Result = {
       step: 1,
       title: "Understand Organization & Stakeholders",
       data: {
@@ -167,8 +212,9 @@ export default function Step1({}: Step1Props) {
             Step 1: Understand Organization & Stakeholders
           </CardTitle>
           <CardDescription>
-            This step helps us understand your organization's objectives and
-            stakeholder structure for implementing a Data Classification Policy.
+            This step helps us understand your organization&apos;s objectives
+            and stakeholder structure for implementing a Data Classification
+            Policy.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -190,7 +236,7 @@ export default function Step1({}: Step1Props) {
                     id={`objective-${index}`}
                     checked={formData.primaryObjectives.includes(objective)}
                     onCheckedChange={(checked) =>
-                      handleObjectiveChange(objective, checked)
+                      handleObjectiveChange(objective, !!checked)
                     }
                     className="mt-1 primary-border"
                   />
@@ -203,7 +249,6 @@ export default function Step1({}: Step1Props) {
                 </div>
               ))}
 
-              {/* Multiple Other Options */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Other objectives:</Label>
                 {formData.primaryObjectivesOther.map((item, index) => (
@@ -301,7 +346,7 @@ export default function Step1({}: Step1Props) {
                     id={`stakeholder-${index}`}
                     checked={formData.stakeholders.includes(stakeholder)}
                     onCheckedChange={(checked) =>
-                      handleStakeholderChange(stakeholder, checked)
+                      handleStakeholderChange(stakeholder, !!checked)
                     }
                     className="primary-border"
                   />
@@ -314,7 +359,6 @@ export default function Step1({}: Step1Props) {
                 </div>
               ))}
 
-              {/* Multiple Other Options */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">
                   Other stakeholders:
@@ -375,7 +419,7 @@ export default function Step1({}: Step1Props) {
                     id={`regulation-${index}`}
                     checked={formData.regulations.includes(regulation)}
                     onCheckedChange={(checked) =>
-                      handleRegulationChange(regulation, checked)
+                      handleRegulationChange(regulation, !!checked)
                     }
                     className="primary-border"
                   />
@@ -388,7 +432,6 @@ export default function Step1({}: Step1Props) {
                 </div>
               ))}
 
-              {/* Multiple Other Options */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">
                   Other regulations:

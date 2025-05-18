@@ -8,12 +8,13 @@ export default async function Page({ params }: PageProps) {
   const { id } = await params;
   // get the data of the organization
 
+  console.log(id);
   return (
     <>
       <div className="w-full h-[100px] bg-white flex  rounded-2xl border">
         <h2>here is gonna be the progress</h2>
       </div>
-      <Step1 />
+      <Step1 initialData={null} />
     </>
   );
 }
