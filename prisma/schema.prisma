@@ -22,6 +22,8 @@ model User {
   profile_image String?
   bio          String?
   projects     Project[] @relation("UserProjects")
+
+  Policy Policy[] @relation("UserPolicies")
 }
 
 
@@ -35,6 +37,42 @@ model Project {
   owner_id    String
   owner       User      @relation("UserProjects", fields: [owner_id], references: [id])
   
+}
+
+
+
+
+model Policy {
+  id                    String   @id @default(uuid())
+  title                 String
+  status                Status   @default(ACTIVE)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  
+  // Policy specific fields from your form schema
+  objective             String
+  stakeholders          String[] // Array of strings
+  business_processes    String[] // Array of strings
+  data_types            String[] // Array of strings
+  departments           String[] // Array of strings
+  has_data_inventory    Boolean?
+  data_inventory_link   String?
+  needs_guidance        Boolean?
+  data_value_assessment String[] // Array of strings
+  business_impacts      Json     // JSON object for key-value pairs
+  sensitivity_levels    String[] // Array of strings
+  custom_classification Json     // JSON object for classification structure
+  organization_name     String
+  version               String   @default("1.0")
+  approval_roles        String[] // Array of strings
+  
+  // Relationship to user who created the policy
+  created_by_id         String
+  created_by            User     @relation("UserPolicies", fields: [created_by_id], references: [id])
+  
+  @@index([created_by_id])
+  @@index([status])
+  @@index([created_at])
 }
 
 

@@ -12,7 +12,14 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, FileText, CheckCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  CheckCircle,
+  Download,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Step1Context } from "./steps/step1-context";
@@ -20,9 +27,11 @@ import { Step2Inventory } from "./steps/step2-inventory";
 import { Step3Classification } from "./steps/step3-classification";
 import { Step4Generate } from "./steps/step4-generate";
 import { cn } from "@/lib/utils";
+import { generateAndDownloadPolicy } from "@/lib/generate-policy-document";
 
 export function PolicyGenerator() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
   const totalSteps = 4;
 
   const form = useForm<FormSchema>({
@@ -131,9 +140,29 @@ export function PolicyGenerator() {
     if (currentStep > 1) setCurrentStep((prev) => prev - 1);
   }
 
-  function onSubmit(values: FormSchema) {
+  async function onSubmit(values: FormSchema) {
     console.log("Form Submission:", JSON.stringify(values, null, 2));
-    // Here you would typically send the data to your backend
+
+    setIsGenerating(true);
+
+    try {
+      // Generate and download the Word document
+      //@ts-expect-error alla ysahal
+      const result = await generateAndDownloadPolicy(values);
+
+      if (result.success) {
+        console.log("Policy document generated successfully!");
+        // You could add a success toast notification here
+      } else {
+        console.error("Error generating policy document:", result.error);
+        // You could add an error toast notification here
+      }
+    } catch (error) {
+      console.error("Unexpected error during document generation:", error);
+      // You could add an error toast notification here
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
@@ -235,10 +264,10 @@ export function PolicyGenerator() {
                 type="button"
                 variant="outline"
                 onClick={onPrevious}
-                disabled={currentStep === 1}
+                disabled={currentStep === 1 || isGenerating}
                 className={cn(
                   "gap-2 p-6 text-base font-medium transition-all duration-300 border-2",
-                  currentStep === 1
+                  currentStep === 1 || isGenerating
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-green-50 hover:border-green-200"
                 )}
@@ -250,16 +279,27 @@ export function PolicyGenerator() {
               {currentStep === totalSteps ? (
                 <Button
                   type="submit"
-                  className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-6 text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg"
+                  disabled={isGenerating}
+                  className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-6 text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:from-green-600 disabled:hover:to-emerald-600"
                 >
-                  Generate Policy
-                  <FileText className="h-5 w-5 ml-1" />
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Generating Document...
+                    </>
+                  ) : (
+                    <>
+                      Generate & Download Policy
+                      <Download className="h-5 w-5 ml-1" />
+                    </>
+                  )}
                 </Button>
               ) : (
                 <Button
                   type="button"
                   onClick={onNext}
-                  className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white p-6 text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg"
+                  disabled={isGenerating}
+                  className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white p-6 text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   Next Step
                   <ChevronRight className="h-5 w-5 ml-1" />
@@ -269,6 +309,30 @@ export function PolicyGenerator() {
           </Card>
         </form>
       </Form>
+
+      {/* Loading Overlay */}
+      {isGenerating && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Loader2 className="h-12 w-12 animate-spin text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">
+              Generating Your Policy Document
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Please wait while we create your comprehensive data classification
+              policy document. This may take a few moments.
+            </p>
+            <div className="flex items-center justify-center space-x-2">
+              <FileText className="h-5 w-5 text-green-600" />
+              <span className="text-sm text-green-600 font-medium">
+                Creating Word document...
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
