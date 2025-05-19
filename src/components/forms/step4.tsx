@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState } from "react";
@@ -12,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -21,18 +22,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMutation } from "@tanstack/react-query";
+import { updateFourthStepByOrganizationId } from "@/actions/steps";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
-interface Step4Props {}
+// Define types for the component
+export interface Step4Data {
+  accessPermissions: Record<string, string[]>;
+  encryptionProtocols: Record<string, string[]>;
+  customRoles: string[];
+  customEncryption: string[];
+}
 
-export default function Step4({}: Step4Props) {
-  // Default classification levels (assuming these come from Step 3)
-  const [classificationLevels, setClassificationLevels] = useState([
-    "Public",
-    "Internal",
-    "Confidential",
-    "Restricted",
-  ]);
+interface Step4Props {
+  classifications: any[];
+  organizationId: string;
+  initialData?: Step4Data;
+}
 
+export default function Step4({
+  classifications,
+  organizationId,
+  initialData,
+}: Step4Props) {
+  const router = useRouter();
   // Predefined roles
   const predefinedRoles = [
     "All users",
@@ -50,17 +64,6 @@ export default function Step4({}: Step4Props) {
     "None",
   ];
 
-  // Custom roles
-  const [customRoles, setCustomRoles] = useState([]);
-
-  // State for access permissions
-  const [accessPermissions, setAccessPermissions] = useState({
-    Public: ["All users"],
-    Internal: ["All employees"],
-    Confidential: ["Customer Service", "Compliance"],
-    Restricted: ["C-level executives", "IT admins"],
-  });
-
   // Predefined encryption types
   const encryptionTypes = [
     "None",
@@ -76,15 +79,53 @@ export default function Step4({}: Step4Props) {
     "S/MIME",
   ];
 
-  // Custom encryption types
-  const [customEncryption, setCustomEncryption] = useState([]);
+  // Initialize state with initialData
+  const [customRoles, setCustomRoles] = useState<string[]>(
+    initialData?.customRoles || []
+  );
+  const [customEncryption, setCustomEncryption] = useState<string[]>(
+    initialData?.customEncryption || []
+  );
 
-  // State for encryption protocols
-  const [encryptionProtocols, setEncryptionProtocols] = useState({
-    Public: ["None"],
-    Internal: ["TLS 1.3"],
-    Confidential: ["AES-256", "TLS 1.3"],
-    Restricted: ["AES-256", "BitLocker"],
+  const [accessPermissions, setAccessPermissions] = useState<
+    Record<string, string[]>
+  >(
+    initialData?.accessPermissions || {
+      Public: ["All users"],
+      Internal: ["All employees"],
+      Confidential: ["Customer Service", "Compliance"],
+      Restricted: ["C-level executives", "IT admins"],
+    }
+  );
+
+  const [encryptionProtocols, setEncryptionProtocols] = useState<
+    Record<string, string[]>
+  >(
+    initialData?.encryptionProtocols || {
+      Public: ["None"],
+      Internal: ["TLS 1.3"],
+      Confidential: ["AES-256", "TLS 1.3"],
+      Restricted: ["AES-256", "BitLocker"],
+    }
+  );
+
+  // Setup React Query mutation
+  const mutation = useMutation({
+    mutationFn: (data: { organizationId: string; newData: any }) => {
+      return updateFourthStepByOrganizationId(
+        data.organizationId,
+        data.newData
+      );
+    },
+    onSuccess: () => {
+      toast(
+        "Access controls and security measures have been saved successfully."
+      );
+    },
+    onError: (error) => {
+      toast("Failed to save access controls data. Please try again.");
+      console.error("Error saving Step 4 data:", error);
+    },
   });
 
   // Handle custom role changes
@@ -92,27 +133,26 @@ export default function Step4({}: Step4Props) {
     setCustomRoles([...customRoles, ""]);
   };
 
-  const updateCustomRole = (index, value) => {
+  const updateCustomRole = (index: number, value: string) => {
     const updated = [...customRoles];
     updated[index] = value;
     setCustomRoles(updated);
   };
 
-  const removeCustomRole = (index) => {
+  const removeCustomRole = (index: number) => {
     const roleToRemove = customRoles[index];
     setCustomRoles(customRoles.filter((_, i) => i !== index));
 
     // Remove this role from any classification level that uses it
-    Object.keys(accessPermissions).forEach((level) => {
-      if (accessPermissions[level].includes(roleToRemove)) {
-        setAccessPermissions({
-          ...accessPermissions,
-          [level]: accessPermissions[level].filter(
-            (role) => role !== roleToRemove
-          ),
-        });
+    const updatedAccessPermissions = { ...accessPermissions };
+    Object.keys(updatedAccessPermissions).forEach((level) => {
+      if (updatedAccessPermissions[level].includes(roleToRemove)) {
+        updatedAccessPermissions[level] = updatedAccessPermissions[
+          level
+        ].filter((role) => role !== roleToRemove);
       }
     });
+    setAccessPermissions(updatedAccessPermissions);
   };
 
   // Handle custom encryption changes
@@ -120,31 +160,30 @@ export default function Step4({}: Step4Props) {
     setCustomEncryption([...customEncryption, ""]);
   };
 
-  const updateCustomEncryption = (index, value) => {
+  const updateCustomEncryption = (index: number, value: string) => {
     const updated = [...customEncryption];
     updated[index] = value;
     setCustomEncryption(updated);
   };
 
-  const removeCustomEncryption = (index) => {
+  const removeCustomEncryption = (index: number) => {
     const encryptionToRemove = customEncryption[index];
     setCustomEncryption(customEncryption.filter((_, i) => i !== index));
 
     // Remove this encryption from any classification level that uses it
-    Object.keys(encryptionProtocols).forEach((level) => {
-      if (encryptionProtocols[level].includes(encryptionToRemove)) {
-        setEncryptionProtocols({
-          ...encryptionProtocols,
-          [level]: encryptionProtocols[level].filter(
-            (enc) => enc !== encryptionToRemove
-          ),
-        });
+    const updatedEncryptionProtocols = { ...encryptionProtocols };
+    Object.keys(updatedEncryptionProtocols).forEach((level) => {
+      if (updatedEncryptionProtocols[level].includes(encryptionToRemove)) {
+        updatedEncryptionProtocols[level] = updatedEncryptionProtocols[
+          level
+        ].filter((enc) => enc !== encryptionToRemove);
       }
     });
+    setEncryptionProtocols(updatedEncryptionProtocols);
   };
 
   // Handle role selection for a classification level
-  const toggleRoleForLevel = (level, role) => {
+  const toggleRoleForLevel = (level: string, role: string) => {
     const currentRoles = accessPermissions[level] || [];
 
     // Special handling for "All users" and "All employees"
@@ -222,7 +261,7 @@ export default function Step4({}: Step4Props) {
   };
 
   // Handle encryption selection for a classification level
-  const toggleEncryptionForLevel = (level, encryption) => {
+  const toggleEncryptionForLevel = (level: string, encryption: string) => {
     const currentEncryption = encryptionProtocols[level] || [];
 
     // Special handling for "None"
@@ -278,7 +317,7 @@ export default function Step4({}: Step4Props) {
   };
 
   const handleSubmit = () => {
-    const results = {
+    const stepData = {
       step: 4,
       title: "Access Controls and Security Measures",
       data: {
@@ -290,11 +329,17 @@ export default function Step4({}: Step4Props) {
       timestamp: new Date().toISOString(),
     };
 
-    console.log("Step 4 Results:", JSON.stringify(results, null, 2));
+    console.log("Step 4 Results:", JSON.stringify(stepData, null, 2));
+
+    // Execute the mutation with organizationId and the new data
+    mutation.mutate({
+      organizationId,
+      newData: stepData,
+    });
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="w-full mx-auto p-6 space-y-6">
       <style jsx>{`
         .primary-color {
           color: #792a9f;
@@ -379,7 +424,7 @@ export default function Step4({}: Step4Props) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classificationLevels.map((level) => (
+                {classifications.map((level) => (
                   <TableRow key={level}>
                     <TableCell className="font-medium">{level}</TableCell>
                     <TableCell>
@@ -395,7 +440,7 @@ export default function Step4({}: Step4Props) {
                                 accessPermissions[level]?.includes(role) ||
                                 false
                               }
-                              onCheckedChange={(checked) =>
+                              onCheckedChange={() =>
                                 toggleRoleForLevel(level, role)
                               }
                               className="primary-border"
@@ -475,7 +520,7 @@ export default function Step4({}: Step4Props) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classificationLevels.map((level) => (
+                {classifications.map((level) => (
                   <TableRow key={level}>
                     <TableCell className="font-medium">{level}</TableCell>
                     <TableCell>
@@ -492,7 +537,7 @@ export default function Step4({}: Step4Props) {
                                   encryption
                                 ) || false
                               }
-                              onCheckedChange={(checked) =>
+                              onCheckedChange={() =>
                                 toggleEncryptionForLevel(level, encryption)
                               }
                               className="primary-border"
@@ -544,13 +589,26 @@ export default function Step4({}: Step4Props) {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-6">
+          <div className="pt-6 w-full flex items-center justify-end  gap-x-4">
+            <Button
+              onClick={() => router.push(`/projects/${organizationId}/step3`)}
+              variant={"outline"}
+            >
+              previous
+            </Button>
             <Button
               onClick={handleSubmit}
               className="w-full md:w-auto primary-bg hover:opacity-90"
-              size="lg"
+              disabled={mutation.isPending}
             >
-              Submit Step 4 & View JSON Results
+              {mutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "save "
+              )}
             </Button>
           </div>
         </CardContent>

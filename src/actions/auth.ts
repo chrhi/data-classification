@@ -215,7 +215,6 @@ export const logoutAction = async () => {
   }
 };
 
-// Helper function to get current user (can be used in other server actions)
 export const getCurrentUser = async () => {
   try {
     const awaitedCookies = await cookies();
@@ -237,6 +236,8 @@ export const getCurrentUser = async () => {
         firstName: true,
         lastName: true,
         role: true,
+        bio: true,
+        isActive: true,
       },
     });
 

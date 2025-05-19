@@ -1,4 +1,7 @@
+import { getFirstStepByOrganizationId } from "@/actions/steps";
 import Step1 from "@/components/forms/step1";
+import MaxWidthWrapper from "@/components/max-width-wrapper";
+import { ProgressSteps } from "@/components/step-progress";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -6,15 +9,20 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
-  // get the data of the organization
 
-  console.log(id);
+  const data = await getFirstStepByOrganizationId(id);
+
   return (
     <>
-      <div className="w-full h-[100px] bg-white flex  rounded-2xl border">
-        <h2>here is gonna be the progress</h2>
-      </div>
-      <Step1 initialData={null} />
+      <MaxWidthWrapper>
+        <ProgressSteps projectId={id} />
+
+        <Step1
+          //@ts-expect-error this is a typo error
+          initialData={data?.data ?? null}
+          organizationId={id}
+        />
+      </MaxWidthWrapper>
     </>
   );
 }

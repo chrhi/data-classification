@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import {
   Card,
   CardContent,
@@ -13,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
+import { updateFirstStepByOrganizationId } from "@/actions/steps";
+import { useRouter } from "next/navigation";
 
-// Type definitions
 export type Step1Data = {
   primaryObjectives: {
     selected: string[];
@@ -56,9 +59,12 @@ type OtherCategory =
 
 interface Step1Props {
   initialData?: Step1Result | null;
+  organizationId: string;
 }
 
-export default function Step1({ initialData }: Step1Props) {
+export default function Step1({ initialData, organizationId }: Step1Props) {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>(() => {
     if (initialData) {
       return {
@@ -80,6 +86,25 @@ export default function Step1({ initialData }: Step1Props) {
       regulations: [],
       regulationsOther: [],
     };
+  });
+
+  // React Query mutation for updating first step
+  const updateFirstStepMutation = useMutation({
+    mutationFn: async (data: Step1Result) =>
+      await updateFirstStepByOrganizationId(organizationId, data),
+    onSuccess: () => {
+      router.push(`/projects/${organizationId}/step2`);
+      toast.success("Step 1 data saved successfully!", {
+        duration: 4000,
+        position: "top-right",
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to save Step 1 data: ${error.message}`, {
+        duration: 5000,
+        position: "top-right",
+      });
+    },
   });
 
   const primaryObjectiveOptions = [
@@ -185,11 +210,14 @@ export default function Step1({ initialData }: Step1Props) {
       timestamp: new Date().toISOString(),
     };
 
-    console.log("Step 1 Results:", JSON.stringify(results, null, 2));
+    // Trigger the mutation to save the data
+    updateFirstStepMutation.mutate(results);
   };
 
+  const isLoading = updateFirstStepMutation.isPending;
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="w-full mx-auto p-6 space-y-6">
       <style jsx>{`
         .primary-color {
           color: #792a9f;
@@ -239,6 +267,7 @@ export default function Step1({ initialData }: Step1Props) {
                       handleObjectiveChange(objective, !!checked)
                     }
                     className="mt-1 primary-border"
+                    disabled={isLoading}
                   />
                   <Label
                     htmlFor={`objective-${index}`}
@@ -264,6 +293,7 @@ export default function Step1({ initialData }: Step1Props) {
                         )
                       }
                       className="flex-1"
+                      disabled={isLoading}
                     />
                     <Button
                       variant="outline"
@@ -272,6 +302,7 @@ export default function Step1({ initialData }: Step1Props) {
                         removeOtherItem("primaryObjectivesOther", index)
                       }
                       className="hover-primary"
+                      disabled={isLoading}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -282,6 +313,7 @@ export default function Step1({ initialData }: Step1Props) {
                   size="sm"
                   onClick={() => addOtherItem("primaryObjectivesOther")}
                   className="hover-primary"
+                  disabled={isLoading}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Other Objective
@@ -300,12 +332,14 @@ export default function Step1({ initialData }: Step1Props) {
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, organizationSize: value }))
               }
+              disabled={isLoading}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem
                   value="small"
                   id="size-small"
                   className="primary-border"
+                  disabled={isLoading}
                 />
                 <Label htmlFor="size-small">Small (&lt;100GB)</Label>
               </div>
@@ -314,6 +348,7 @@ export default function Step1({ initialData }: Step1Props) {
                   value="medium"
                   id="size-medium"
                   className="primary-border"
+                  disabled={isLoading}
                 />
                 <Label htmlFor="size-medium">Medium (100GB-1TB)</Label>
               </div>
@@ -322,6 +357,7 @@ export default function Step1({ initialData }: Step1Props) {
                   value="large"
                   id="size-large"
                   className="primary-border"
+                  disabled={isLoading}
                 />
                 <Label htmlFor="size-large">Large (&gt;1TB)</Label>
               </div>
@@ -349,6 +385,7 @@ export default function Step1({ initialData }: Step1Props) {
                       handleStakeholderChange(stakeholder, !!checked)
                     }
                     className="primary-border"
+                    disabled={isLoading}
                   />
                   <Label
                     htmlFor={`stakeholder-${index}`}
@@ -376,6 +413,7 @@ export default function Step1({ initialData }: Step1Props) {
                         )
                       }
                       className="flex-1"
+                      disabled={isLoading}
                     />
                     <Button
                       variant="outline"
@@ -384,6 +422,7 @@ export default function Step1({ initialData }: Step1Props) {
                         removeOtherItem("stakeholdersOther", index)
                       }
                       className="hover-primary"
+                      disabled={isLoading}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -394,6 +433,7 @@ export default function Step1({ initialData }: Step1Props) {
                   size="sm"
                   onClick={() => addOtherItem("stakeholdersOther")}
                   className="hover-primary"
+                  disabled={isLoading}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Other Stakeholder
@@ -422,6 +462,7 @@ export default function Step1({ initialData }: Step1Props) {
                       handleRegulationChange(regulation, !!checked)
                     }
                     className="primary-border"
+                    disabled={isLoading}
                   />
                   <Label
                     htmlFor={`regulation-${index}`}
@@ -449,12 +490,14 @@ export default function Step1({ initialData }: Step1Props) {
                         )
                       }
                       className="flex-1"
+                      disabled={isLoading}
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => removeOtherItem("regulationsOther", index)}
                       className="hover-primary"
+                      disabled={isLoading}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -465,6 +508,7 @@ export default function Step1({ initialData }: Step1Props) {
                   size="sm"
                   onClick={() => addOtherItem("regulationsOther")}
                   className="hover-primary"
+                  disabled={isLoading}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Other Regulation
@@ -474,13 +518,20 @@ export default function Step1({ initialData }: Step1Props) {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-6">
+          <div className="pt-6 w-full flex items-center justify-end  gap-x-4">
             <Button
               onClick={handleSubmit}
               className="w-full md:w-auto primary-bg hover:opacity-90"
-              size="lg"
+              disabled={isLoading}
             >
-              Submit Step 1 & View JSON Results
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "save & go next"
+              )}
             </Button>
           </div>
         </CardContent>

@@ -8,7 +8,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
       {/* Left side - Background with branding */}
       <motion.div
-        className="hidden md:flex md:w-2/5 bg-green-600 flex-col justify-center items-center p-8 text-white relative overflow-hidden"
+        className="hidden md:flex md:w-2/5 bg-[#792a9f] flex-col justify-center items-center p-8 text-white relative overflow-hidden"
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
@@ -68,11 +68,11 @@ export default function LoginPage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <h1 className="text-3xl font-bold italic text-green-600">
+            <h1 className="text-3xl font-bold italic text-[#792a9f]">
               data classification
             </h1>
             <motion.div
-              className="h-1 w-16 bg-green-600 rounded mx-auto mt-1"
+              className="h-1 w-16 bg-[#792a9f] rounded mx-auto mt-1"
               initial={{ width: 0 }}
               animate={{ width: 64 }}
               transition={{ delay: 0.5, duration: 0.4 }}

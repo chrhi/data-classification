@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -12,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, X, Info } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,167 +29,212 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import { useMutation } from "@tanstack/react-query";
+import { updateThirdStepByOrganizationId } from "@/actions/steps";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
-interface Step3Props {}
+interface CategoryData {
+  dataTypes: string[];
+  detail: {
+    storage: string[];
+    regulations: string[];
+    sensitivity: string;
+    storageOther: string[];
+    hasRegulatory: string;
+    businessImpact: string;
+  };
+}
 
-export default function Step3({}: Step3Props) {
-  // Default classification levels
+export interface Step3Data {
+  classificationLevels: {
+    defaultLevels: string[];
+    customLevels: string[];
+    definitions: Record<string, string>;
+  };
+  dataCategories: {
+    name: string;
+    description: string;
+    examples: string;
+    classification: string;
+  }[];
+}
+
+interface Step3Props {
+  initialData?: Step3Data;
+  categoryData: CategoryData[];
+  organizationId: string; // Add organizationId prop to pass to the mutation
+}
+
+interface DataCategory {
+  name: string;
+  description: string;
+  examples: string;
+  classification: string;
+}
+
+export default function Step3({
+  categoryData = [],
+  initialData,
+  organizationId,
+}: Step3Props) {
+  const router = useRouter();
   const defaultLevels = [
-    { name: "Public", selected: true },
-    { name: "Internal", selected: true },
-    { name: "Confidential", selected: true },
-    { name: "Restricted", selected: true },
+    { name: "Public", selected: false },
+    { name: "Internal", selected: false },
+    { name: "Confidential", selected: false },
+    { name: "Restricted", selected: false },
   ];
 
-  // State for classification levels and custom levels
-  const [classificationLevels, setClassificationLevels] =
-    useState(defaultLevels);
-  const [customLevels, setCustomLevels] = useState([]);
-
-  // State for the definitions of each level
-  const [levelDefinitions, setLevelDefinitions] = useState({
-    Public: "",
-    Internal: "",
-    Confidential: "",
-    Restricted: "",
+  // Initialize state with initialData
+  const [classificationLevels, setClassificationLevels] = useState(() => {
+    if (initialData?.classificationLevels?.defaultLevels) {
+      return defaultLevels.map((level) => ({
+        ...level,
+        selected: initialData.classificationLevels.defaultLevels.includes(
+          level.name
+        ),
+      }));
+    }
+    return defaultLevels;
   });
 
-  // State for data categories and their classifications
-  const [dataCategories, setDataCategories] = useState([
-    {
-      name: "Personal Data",
-      description: "Data that can identify an individual",
-      examples: "Names, addresses, email addresses, phone numbers",
-      classification: "Confidential",
-      note: "",
-    },
-    {
-      name: "Financial Data",
-      description: "Data related to financial transactions or accounts",
-      examples: "Credit card numbers, account balances, transactions",
-      classification: "Restricted",
-      note: "",
-    },
-    {
-      name: "Business Data",
-      description: "Data related to operations and business functions",
-      examples: "Schedules, non-sensitive internal documents, general policies",
-      classification: "Internal",
-      note: "",
-    },
-    {
-      name: "Marketing Data",
-      description: "Data used for marketing purposes",
-      examples: "Public marketing materials, brochures, website content",
-      classification: "Public",
-      note: "",
-    },
-  ]);
+  const [customLevels, setCustomLevels] = useState<string[]>(
+    initialData?.classificationLevels?.customLevels || []
+  );
 
-  // Handle custom level changes
+  const [levelDefinitions, setLevelDefinitions] = useState<
+    Record<string, string>
+  >(
+    initialData?.classificationLevels?.definitions || {
+      Public: "",
+      Internal: "",
+      Confidential: "",
+      Restricted: "",
+    }
+  );
+
+  const [dataCategories, setDataCategories] = useState<DataCategory[]>(() => {
+    if (initialData?.dataCategories) {
+      return initialData.dataCategories;
+    } else if (categoryData.length > 0) {
+      return categoryData.map((category) => ({
+        name: category.dataTypes.join(", "),
+        description: `Sensitivity: ${category.detail.sensitivity}, Impact: ${category.detail.businessImpact}`,
+        examples: category.detail.storage
+          .concat(category.detail.storageOther)
+          .join(", "),
+        classification: "",
+      }));
+    }
+    return [];
+  });
+
+  // Update definitions when custom levels change
+  useEffect(() => {
+    if (initialData?.classificationLevels?.definitions) {
+      setLevelDefinitions(initialData.classificationLevels.definitions);
+    }
+  }, [initialData]);
+
   const addCustomLevel = () => {
     setCustomLevels([...customLevels, ""]);
   };
 
-  const updateCustomLevel = (index, value) => {
+  const updateCustomLevel = (index: number, value: string) => {
     const updated = [...customLevels];
     updated[index] = value;
     setCustomLevels(updated);
 
-    // Update level definitions if needed
     if (value && !levelDefinitions[value]) {
-      setLevelDefinitions({
-        ...levelDefinitions,
-        [value]: "",
-      });
+      setLevelDefinitions((prev) => ({ ...prev, [value]: "" }));
     }
   };
 
-  const removeCustomLevel = (index) => {
+  const removeCustomLevel = (index: number) => {
     const levelToRemove = customLevels[index];
     const updatedCustomLevels = customLevels.filter((_, i) => i !== index);
     setCustomLevels(updatedCustomLevels);
 
-    // Remove from level definitions
     if (levelToRemove) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [levelToRemove]: _, ...updatedDefinitions } = levelDefinitions;
       setLevelDefinitions(updatedDefinitions);
 
-      // Also update any data categories using this level
-      setDataCategories(
-        dataCategories.map((category) => {
-          if (category.classification === levelToRemove) {
-            return { ...category, classification: "" };
-          }
-          return category;
-        })
+      setDataCategories((categories) =>
+        categories.map((category) => ({
+          ...category,
+          classification:
+            category.classification === levelToRemove
+              ? ""
+              : category.classification,
+        }))
       );
     }
   };
 
-  // Handle default level selection toggle
-  const toggleDefaultLevel = (index) => {
+  const toggleDefaultLevel = (index: number) => {
     const updated = [...classificationLevels];
     updated[index].selected = !updated[index].selected;
     setClassificationLevels(updated);
   };
 
-  // Handle level definitions
-  const updateLevelDefinition = (level, definition) => {
-    setLevelDefinitions({
-      ...levelDefinitions,
-      [level]: definition,
-    });
+  const updateLevelDefinition = (level: string, definition: string) => {
+    setLevelDefinitions((prev) => ({ ...prev, [level]: definition }));
   };
 
-  // Handle data categories
   const addDataCategory = () => {
     setDataCategories([
       ...dataCategories,
-      {
-        name: "",
-        description: "",
-        examples: "",
-        classification: "",
-        note: "",
-      },
+      { name: "", description: "", examples: "", classification: "" },
     ]);
   };
 
-  const updateDataCategory = (index, field, value) => {
+  const updateDataCategory = (
+    index: number,
+    field: keyof DataCategory,
+    value: string
+  ) => {
     const updated = [...dataCategories];
     updated[index][field] = value;
     setDataCategories(updated);
   };
 
-  const removeDataCategory = (index) => {
-    setDataCategories(dataCategories.filter((_, i) => i !== index));
+  const removeDataCategory = (index: number) => {
+    setDataCategories((categories) => categories.filter((_, i) => i !== index));
   };
 
-  // Get all active classification levels
   const getAllLevels = () => {
     const defaultSelected = classificationLevels
       .filter((level) => level.selected)
       .map((level) => level.name);
 
-    const validCustomLevels = customLevels.filter(
-      (level) => level.trim() !== ""
-    );
-
-    return [...defaultSelected, ...validCustomLevels];
+    return [
+      ...defaultSelected,
+      ...customLevels.filter((level) => level.trim() !== ""),
+    ];
   };
 
-  const handleSubmit = () => {
-    const allLevels = getAllLevels();
+  // Setup React Query mutation
+  const mutation = useMutation({
+    mutationFn: (data: { organizationId: string; newData: any }) => {
+      return updateThirdStepByOrganizationId(data.organizationId, data.newData);
+    },
+    onSuccess: () => {
+      router.push(`/projects/${organizationId}/step4`);
+      toast(
+        "Classification levels and categories have been saved successfully."
+      );
+    },
+    onError: (error) => {
+      toast("Failed to save classification data. Please try again.");
+      console.error("Error saving Step 3 data:", error);
+    },
+  });
 
-    const results = {
+  const handleSubmit = () => {
+    const stepData = {
       step: 3,
       title: "Classification Levels and Categories",
       data: {
@@ -199,7 +245,7 @@ export default function Step3({}: Step3Props) {
           customLevels: customLevels.filter((level) => level.trim() !== ""),
           definitions: Object.fromEntries(
             Object.entries(levelDefinitions).filter(([key]) =>
-              allLevels.includes(key)
+              getAllLevels().includes(key)
             )
           ),
         },
@@ -210,11 +256,17 @@ export default function Step3({}: Step3Props) {
       timestamp: new Date().toISOString(),
     };
 
-    console.log("Step 3 Results:", JSON.stringify(results, null, 2));
+    console.log("Step 3 Results:", JSON.stringify(stepData, null, 2));
+
+    // Execute the mutation with organizationId and the new data
+    mutation.mutate({
+      organizationId,
+      newData: stepData,
+    });
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="w-full mx-auto p-6 space-y-6">
       <style jsx>{`
         .primary-color {
           color: #792a9f;
@@ -241,8 +293,35 @@ export default function Step3({}: Step3Props) {
             assign them to your data categories.
           </CardDescription>
         </CardHeader>
+
+        <div className="mt-8 p-4 bg-gray-50 rounded-md m-4">
+          <h4 className="font-semibold primary-color mb-2">
+            Classification Level Guidelines
+          </h4>
+          <p className="text-sm text-gray-600 mb-2">
+            Recommended classification assignment based on standard norms:
+          </p>
+          <ul className="text-sm text-gray-600 space-y-2">
+            <li>
+              <span className="font-medium">Public:</span> None/Low sensitivity,
+              None/Low impact, No regulations.
+            </li>
+            <li>
+              <span className="font-medium">Internal:</span> Low/Medium
+              sensitivity, Low/Medium impact, minimal/no regulations.
+            </li>
+            <li>
+              <span className="font-medium">Confidential:</span> Medium/High
+              sensitivity, Medium/High impact, regulatory protection.
+            </li>
+            <li>
+              <span className="font-medium">Restricted:</span> High sensitivity,
+              High impact, critical regulations or business-critical (e.g.,
+              trade secrets).
+            </li>
+          </ul>
+        </div>
         <CardContent className="space-y-8">
-          {/* Question 3.1 - Classification Levels */}
           <div className="space-y-4">
             <div>
               <Label className="text-lg font-semibold primary-color">
@@ -255,7 +334,6 @@ export default function Step3({}: Step3Props) {
               </p>
             </div>
 
-            {/* Standard classification levels */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Standard levels:</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -278,7 +356,6 @@ export default function Step3({}: Step3Props) {
               </div>
             </div>
 
-            {/* Custom Classification Levels */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Custom classification levels:
@@ -312,7 +389,6 @@ export default function Step3({}: Step3Props) {
               </Button>
             </div>
 
-            {/* Classification Level Definitions */}
             <div className="pt-6 space-y-4">
               <Label className="text-lg font-semibold primary-color">
                 3.2 Define your classification levels
@@ -343,15 +419,13 @@ export default function Step3({}: Step3Props) {
             </div>
           </div>
 
-          {/* Data Categories and Classification Assignment */}
           <div className="pt-6 space-y-4">
             <div>
               <Label className="text-lg font-semibold primary-color">
                 3.3 Data Categories and Classification Assignment
               </Label>
               <p className="text-sm text-gray-600 mt-1">
-                Define your data categories and assign appropriate
-                classification levels to each.
+                Assign classification levels to your data categories
               </p>
             </div>
 
@@ -362,7 +436,6 @@ export default function Step3({}: Step3Props) {
                   <TableHead className="w-[200px]">Description</TableHead>
                   <TableHead className="w-[200px]">Examples</TableHead>
                   <TableHead className="w-[120px]">Classification</TableHead>
-                  <TableHead className="w-[100px]">Notes</TableHead>
                   <TableHead className="w-[60px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -371,7 +444,6 @@ export default function Step3({}: Step3Props) {
                   <TableRow key={index}>
                     <TableCell>
                       <Input
-                        placeholder="Category name"
                         value={category.name}
                         onChange={(e) =>
                           updateDataCategory(index, "name", e.target.value)
@@ -380,7 +452,6 @@ export default function Step3({}: Step3Props) {
                     </TableCell>
                     <TableCell>
                       <Input
-                        placeholder="Brief description"
                         value={category.description}
                         onChange={(e) =>
                           updateDataCategory(
@@ -393,7 +464,6 @@ export default function Step3({}: Step3Props) {
                     </TableCell>
                     <TableCell>
                       <Input
-                        placeholder="Example data types"
                         value={category.examples}
                         onChange={(e) =>
                           updateDataCategory(index, "examples", e.target.value)
@@ -420,32 +490,6 @@ export default function Step3({}: Step3Props) {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const note = prompt(
-                                  "Add a note for this category:",
-                                  category.note
-                                );
-                                if (note !== null) {
-                                  updateDataCategory(index, "note", note);
-                                }
-                              }}
-                            >
-                              <Info className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {category.note ? category.note : "Add a note"}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
-                    <TableCell>
                       <Button
                         variant="outline"
                         size="sm"
@@ -469,45 +513,29 @@ export default function Step3({}: Step3Props) {
               <Plus className="h-4 w-4 mr-2" />
               Add Data Category
             </Button>
-
-            {/* Classification Level Guide */}
-            <div className="mt-8 p-4 bg-gray-50 rounded-md">
-              <h4 className="font-semibold primary-color mb-2">
-                Classification Level Guidelines
-              </h4>
-              <p className="text-sm text-gray-600 mb-2">
-                Recommended classification assignment based on standard norms:
-              </p>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>
-                  <span className="font-medium">Public:</span> None/Low
-                  sensitivity, None/Low impact, No regulations.
-                </li>
-                <li>
-                  <span className="font-medium">Internal:</span> Low/Medium
-                  sensitivity, Low/Medium impact, minimal/no regulations.
-                </li>
-                <li>
-                  <span className="font-medium">Confidential:</span> Medium/High
-                  sensitivity, Medium/High impact, regulatory protection.
-                </li>
-                <li>
-                  <span className="font-medium">Restricted:</span> High
-                  sensitivity, High impact, critical regulations or
-                  business-critical (e.g., trade secrets).
-                </li>
-              </ul>
-            </div>
           </div>
 
           {/* Submit Button */}
-          <div className="pt-6">
+          <div className="pt-6 w-full flex items-center justify-end  gap-x-4">
+            <Button
+              onClick={() => router.push(`/projects/${organizationId}/step2`)}
+              variant={"outline"}
+            >
+              previous
+            </Button>
             <Button
               onClick={handleSubmit}
               className="w-full md:w-auto primary-bg hover:opacity-90"
-              size="lg"
+              disabled={mutation.isPending}
             >
-              Submit Step 3 & View JSON Results
+              {mutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "save & go next"
+              )}
             </Button>
           </div>
         </CardContent>

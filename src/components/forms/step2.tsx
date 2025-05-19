@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import {
   Card,
   CardContent,
@@ -13,19 +16,106 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, X, Loader2 } from "lucide-react";
+import { updateSecondStepByOrganizationId } from "@/actions/steps";
+import { useRouter } from "next/navigation";
 
-interface Step2Props {}
+// Import Step 1 types if in separate file
+export type Step1Data = {
+  data: {
+    primaryObjectives: { selected: string[]; other: string[] };
+    organizationSize: string;
+    stakeholders: { selected: string[]; other: string[] };
+    regulations: { selected: string[]; other: string[] };
+  };
+};
 
-export default function Step2({}: Step2Props) {
-  const [formData, setFormData] = useState({
-    hasInventory: "",
-    selectedDataTypes: [],
-    dataTypesOther: [],
-    dataTypeDetails: {},
+export type Step1Result = {
+  step: 1;
+  title: string;
+  data: Step1Data;
+  timestamp: string;
+};
+
+export type DataTypeDetail = {
+  sensitivity: string;
+  businessImpact: string;
+  hasRegulatory: string;
+  regulations: string[];
+  storage: string[];
+  storageOther: string[];
+};
+
+export type Step2Data = {
+  hasInventory: string;
+  selectedDataTypes: string[];
+  customDataTypes: string[];
+  dataTypeDetails: Record<string, DataTypeDetail>;
+};
+
+export type Step2Result = {
+  step: 2;
+  title: string;
+  data: Step2Data;
+  timestamp: string;
+};
+
+type MainResult = {
+  step1?: Step1Result;
+  step2?: Step2Result;
+};
+
+interface Step2Props {
+  initialData?: MainResult | null;
+  organizationId: string;
+}
+
+export default function Step2({ initialData, organizationId }: Step2Props) {
+  const router = useRouter();
+  const [formData, setFormData] = useState(() => {
+    const initialStep2 = initialData?.step2?.data;
+
+    return {
+      hasInventory: initialStep2?.hasInventory || "",
+      selectedDataTypes: initialStep2?.selectedDataTypes || [],
+      dataTypesOther: initialStep2?.customDataTypes || [],
+      dataTypeDetails: initialStep2?.dataTypeDetails || {},
+    };
   });
 
-  const [expandedDataTypes, setExpandedDataTypes] = useState({});
+  const [expandedDataTypes, setExpandedDataTypes] = useState<
+    Record<string, boolean>
+  >({});
+
+  // React Query mutation for updating step 2
+  const updateSecondStepMutation = useMutation({
+    mutationFn: async ({
+      organizationId,
+      data,
+    }: {
+      organizationId: string;
+      data: any;
+    }) => {
+      const res = await updateSecondStepByOrganizationId(organizationId, data);
+
+      console.log(res);
+    },
+    onSuccess: (data) => {
+      router.push(`/projects/${organizationId}/step3`);
+      toast.success("Step 2 data saved successfully!");
+      console.log("Step 2 saved successfully:", data);
+    },
+    onError: (error) => {
+      toast.error(`Failed to save step 2: ${error.message}`);
+      console.error("Error saving step 2:", error);
+    },
+  });
+
+  // Get regulations from Step 1 data
+  const step1Regulations = [
+    ...(initialData?.step1?.data.data.regulations.selected || []),
+    ...(initialData?.step1?.data.data.regulations.other || []),
+  ];
 
   const dataTypeOptions = [
     "Données personnelles",
@@ -79,16 +169,12 @@ export default function Step2({}: Step2Props) {
 
   const storageOptions = ["Local files", "Shared drive", "External database"];
 
-  const handleDataTypeChange = (
-    dataType: string,
-    checked: string | boolean
-  ) => {
+  const handleDataTypeChange = (dataType: string, checked: boolean) => {
     setFormData((prev) => {
       const newSelectedDataTypes = checked
         ? [...prev.selectedDataTypes, dataType]
         : prev.selectedDataTypes.filter((item) => item !== dataType);
 
-      // Initialize details for new data types
       const newDataTypeDetails = { ...prev.dataTypeDetails };
       if (checked) {
         newDataTypeDetails[dataType] = {
@@ -98,6 +184,7 @@ export default function Step2({}: Step2Props) {
           regulations: [],
           storage: [],
           storageOther: [],
+          ...initialData?.step2?.data.dataTypeDetails?.[dataType],
         };
       } else {
         delete newDataTypeDetails[dataType];
@@ -112,9 +199,9 @@ export default function Step2({}: Step2Props) {
   };
 
   const updateDataTypeDetail = (
-    dataType: string | number,
-    field: string,
-    value: string | any[]
+    dataType: string,
+    field: keyof DataTypeDetail,
+    value: string | string[]
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -128,61 +215,53 @@ export default function Step2({}: Step2Props) {
     }));
   };
 
-  const addRegulation = (dataType: string | number) => {
+  const addRegulation = (dataType: string) => {
     const current = formData.dataTypeDetails[dataType]?.regulations || [];
     updateDataTypeDetail(dataType, "regulations", [...current, ""]);
   };
 
-  const updateRegulation = (
-    dataType: string | number,
-    index: any,
-    value: string
-  ) => {
+  const updateRegulation = (dataType: string, index: number, value: string) => {
     const current = formData.dataTypeDetails[dataType]?.regulations || [];
-    const updated = current.map((item: any, i: any) =>
-      i === index ? value : item
-    );
+    const updated = current.map((item, i) => (i === index ? value : item));
     updateDataTypeDetail(dataType, "regulations", updated);
   };
 
-  const removeRegulation = (dataType: string | number, index: any) => {
+  const removeRegulation = (dataType: string, index: number) => {
     const current = formData.dataTypeDetails[dataType]?.regulations || [];
-    const updated = current.filter((_: any, i: any) => i !== index);
+    const updated = current.filter((_, i) => i !== index);
     updateDataTypeDetail(dataType, "regulations", updated);
   };
 
   const handleStorageChange = (
-    dataType: string | number,
+    dataType: string,
     option: string,
-    checked: string | boolean
+    checked: boolean
   ) => {
     const current = formData.dataTypeDetails[dataType]?.storage || [];
     const updated = checked
       ? [...current, option]
-      : current.filter((item: any) => item !== option);
+      : current.filter((item) => item !== option);
     updateDataTypeDetail(dataType, "storage", updated);
   };
 
-  const addStorageOther = (dataType: string | number) => {
+  const addStorageOther = (dataType: string) => {
     const current = formData.dataTypeDetails[dataType]?.storageOther || [];
     updateDataTypeDetail(dataType, "storageOther", [...current, ""]);
   };
 
   const updateStorageOther = (
-    dataType: string | number,
-    index: any,
+    dataType: string,
+    index: number,
     value: string
   ) => {
     const current = formData.dataTypeDetails[dataType]?.storageOther || [];
-    const updated = current.map((item: any, i: any) =>
-      i === index ? value : item
-    );
+    const updated = current.map((item, i) => (i === index ? value : item));
     updateDataTypeDetail(dataType, "storageOther", updated);
   };
 
-  const removeStorageOther = (dataType: string | number, index: any) => {
+  const removeStorageOther = (dataType: string, index: number) => {
     const current = formData.dataTypeDetails[dataType]?.storageOther || [];
-    const updated = current.filter((_: any, i: any) => i !== index);
+    const updated = current.filter((_, i) => i !== index);
     updateDataTypeDetail(dataType, "storageOther", updated);
   };
 
@@ -200,39 +279,42 @@ export default function Step2({}: Step2Props) {
         i === index ? value : item
       ),
     }));
-
-    // Handle selection/deselection
-    const oldValue = formData.dataTypesOther[index];
-    if (oldValue && formData.selectedDataTypes.includes(oldValue)) {
-      setFormData((prev) => ({
-        ...prev,
-        selectedDataTypes: prev.selectedDataTypes.map((item) =>
-          item === oldValue ? value : item
-        ),
-      }));
-    }
   };
 
   const removeOtherDataType = (index: number) => {
-    const removedValue = formData.dataTypesOther[index];
     setFormData((prev) => ({
       ...prev,
       dataTypesOther: prev.dataTypesOther.filter((_, i) => i !== index),
       selectedDataTypes: prev.selectedDataTypes.filter(
-        (item) => item !== removedValue
+        (item) => item !== prev.dataTypesOther[index]
       ),
     }));
   };
 
-  const toggleExpanded = (dataType: string | number) => {
+  const toggleExpanded = (dataType: string) => {
     setExpandedDataTypes((prev) => ({
       ...prev,
       [dataType]: !prev[dataType],
     }));
   };
 
-  const handleSubmit = () => {
-    const results = {
+  const handleSubmit = async () => {
+    // Validate form data
+    if (!formData.hasInventory) {
+      toast.error("Please answer whether you have an up-to-date inventory");
+      return;
+    }
+
+    if (
+      formData.hasInventory === "no" &&
+      formData.selectedDataTypes.length === 0
+    ) {
+      toast.error("Please select at least one data type");
+      return;
+    }
+
+    // Create the results object
+    const results: Step2Result = {
       step: 2,
       title: "Data Landscape",
       data: {
@@ -246,13 +328,10 @@ export default function Step2({}: Step2Props) {
             key,
             {
               ...value,
-              regulations:
-                value.regulations?.filter((reg: string) => reg.trim() !== "") ||
-                [],
-              storageOther:
-                value.storageOther?.filter(
-                  (storage: string) => storage.trim() !== ""
-                ) || [],
+              regulations: value.regulations.filter((reg) => reg.trim() !== ""),
+              storageOther: value.storageOther.filter(
+                (storage) => storage.trim() !== ""
+              ),
             },
           ])
         ),
@@ -260,16 +339,23 @@ export default function Step2({}: Step2Props) {
       timestamp: new Date().toISOString(),
     };
 
-    console.log("Step 2 Results:", JSON.stringify(results, null, 2));
+    // Save to database using React Query mutation
+    try {
+      await updateSecondStepMutation.mutateAsync({
+        organizationId,
+        data: results,
+      });
+
+      // Also log for debugging
+      console.log("Step 2 Results:", JSON.stringify(results, null, 2));
+    } catch (error) {
+      // Error is already handled in the mutation's onError callback
+      console.error("Submission failed:", error);
+    }
   };
 
-  const allDataTypes = [
-    ...dataTypeOptions,
-    ...formData.dataTypesOther.filter((item) => item.trim() !== ""),
-  ];
-
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="w-full mx-auto p-6 space-y-6">
       <style jsx>{`
         .primary-color {
           color: #792a9f;
@@ -330,7 +416,7 @@ export default function Step2({}: Step2Props) {
             </RadioGroup>
           </div>
 
-          {/* Question 2.2 - Data Types (only show if No inventory) */}
+          {/* Question 2.2 - Data Types */}
           {formData.hasInventory === "no" && (
             <div className="space-y-4">
               <div>
@@ -338,8 +424,8 @@ export default function Step2({}: Step2Props) {
                   2.2 Select the data types present in your organization:
                 </Label>
                 <p className="text-sm text-gray-600 mt-1">
-                  Select all that apply. You'll be able to provide details for
-                  each selected type.
+                  Select all that apply. You&apos;ll be able to provide details
+                  for each selected type.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -349,7 +435,7 @@ export default function Step2({}: Step2Props) {
                       id={`datatype-${index}`}
                       checked={formData.selectedDataTypes.includes(dataType)}
                       onCheckedChange={(checked) =>
-                        handleDataTypeChange(dataType, checked)
+                        handleDataTypeChange(dataType, !!checked)
                       }
                       className="primary-border"
                     />
@@ -374,7 +460,7 @@ export default function Step2({}: Step2Props) {
                       checked={formData.selectedDataTypes.includes(item)}
                       onCheckedChange={(checked) => {
                         if (item.trim()) {
-                          handleDataTypeChange(item, checked);
+                          handleDataTypeChange(item, !!checked);
                         }
                       }}
                       className="primary-border"
@@ -410,7 +496,7 @@ export default function Step2({}: Step2Props) {
             </div>
           )}
 
-          {/* Data Type Details - Dynamic forms for each selected data type */}
+          {/* Data Type Details */}
           {formData.hasInventory === "no" &&
             formData.selectedDataTypes.length > 0 && (
               <div className="space-y-6">
@@ -449,7 +535,7 @@ export default function Step2({}: Step2Props) {
 
                     {expandedDataTypes[dataType] && (
                       <CardContent className="space-y-6">
-                        {/* Question 2.3 - Sensitivity */}
+                        {/* Sensitivity */}
                         <div className="space-y-3">
                           <Label className="font-medium">
                             2.3 How sensitive is the {dataType}?
@@ -487,12 +573,10 @@ export default function Step2({}: Step2Props) {
                           </RadioGroup>
                         </div>
 
-                        {/* Question 2.4 - Business Impact */}
+                        {/* Business Impact */}
                         <div className="space-y-3">
                           <Label className="font-medium">
-                            2.4 How would you rate the business impact if the
-                            data type {dataType} were lost, exposed, or
-                            corrupted?
+                            2.4 Business impact assessment
                           </Label>
                           <RadioGroup
                             value={
@@ -527,11 +611,10 @@ export default function Step2({}: Step2Props) {
                           </RadioGroup>
                         </div>
 
-                        {/* Question 2.5 - Regulatory Protection */}
+                        {/* Regulatory Protection */}
                         <div className="space-y-3">
                           <Label className="font-medium">
-                            2.5 Is {dataType} subject to legal or regulatory
-                            protection?
+                            2.5 Regulatory Protection
                           </Label>
                           <RadioGroup
                             value={
@@ -568,35 +651,61 @@ export default function Step2({}: Step2Props) {
                             </div>
                           </RadioGroup>
 
-                          {/* Show regulations input if Yes selected */}
                           {formData.dataTypeDetails[dataType]?.hasRegulatory ===
                             "yes" && (
                             <div className="space-y-2 ml-6">
                               <Label className="text-sm font-medium">
-                                Which regulations apply?
+                                Applicable Regulations
                               </Label>
-                              {formData.dataTypeDetails[
-                                dataType
-                              ]?.regulations?.map(
-                                (
-                                  regulation:
-                                    | string
-                                    | number
-                                    | readonly string[]
-                                    | undefined,
-                                  index: React.Key | null | undefined
-                                ) => (
+                              {step1Regulations.map((regulation, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`${dataType}-regulation-${index}`}
+                                    checked={formData.dataTypeDetails[
+                                      dataType
+                                    ]?.regulations.includes(regulation)}
+                                    onCheckedChange={(checked) => {
+                                      const current =
+                                        formData.dataTypeDetails[dataType]
+                                          ?.regulations || [];
+                                      const updated = checked
+                                        ? [...current, regulation]
+                                        : current.filter(
+                                            (r) => r !== regulation
+                                          );
+                                      updateDataTypeDetail(
+                                        dataType,
+                                        "regulations",
+                                        updated
+                                      );
+                                    }}
+                                    className="primary-border"
+                                  />
+                                  <Label
+                                    htmlFor={`${dataType}-regulation-${index}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {regulation}
+                                  </Label>
+                                </div>
+                              ))}
+                              {formData.dataTypeDetails[dataType]?.regulations
+                                .filter((r) => !step1Regulations.includes(r))
+                                .map((regulation, index) => (
                                   <div
                                     key={index}
                                     className="flex items-center space-x-2"
                                   >
                                     <Input
-                                      placeholder="e.g., GDPR, PCI DSS, etc."
+                                      placeholder="Custom regulation..."
                                       value={regulation}
                                       onChange={(e) =>
                                         updateRegulation(
                                           dataType,
-                                          index,
+                                          index + step1Regulations.length,
                                           e.target.value
                                         )
                                       }
@@ -606,15 +715,17 @@ export default function Step2({}: Step2Props) {
                                       variant="outline"
                                       size="sm"
                                       onClick={() =>
-                                        removeRegulation(dataType, index)
+                                        removeRegulation(
+                                          dataType,
+                                          index + step1Regulations.length
+                                        )
                                       }
                                       className="hover-primary"
                                     >
                                       <X className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                )
-                              )}
+                                ))}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -622,16 +733,16 @@ export default function Step2({}: Step2Props) {
                                 className="hover-primary"
                               >
                                 <Plus className="h-4 w-4 mr-2" />
-                                Add Regulation
+                                Add Custom Regulation
                               </Button>
                             </div>
                           )}
                         </div>
 
-                        {/* Question 2.6 - Storage Location */}
+                        {/* Storage Location */}
                         <div className="space-y-3">
                           <Label className="font-medium">
-                            2.6 Where is this data stored or managed?
+                            2.6 Storage Locations
                           </Label>
                           <div className="space-y-2">
                             {storageOptions.map((option, index) => (
@@ -644,13 +755,13 @@ export default function Step2({}: Step2Props) {
                                   checked={
                                     formData.dataTypeDetails[
                                       dataType
-                                    ]?.storage?.includes(option) || false
+                                    ]?.storage.includes(option) || false
                                   }
                                   onCheckedChange={(checked) =>
                                     handleStorageChange(
                                       dataType,
                                       option,
-                                      checked
+                                      !!checked
                                     )
                                   }
                                   className="primary-border"
@@ -664,51 +775,41 @@ export default function Step2({}: Step2Props) {
                               </div>
                             ))}
 
-                            {/* Custom Storage Options */}
                             <div className="space-y-2">
                               <Label className="text-sm font-medium">
-                                Other storage locations:
+                                Other Storage Locations
                               </Label>
                               {formData.dataTypeDetails[
                                 dataType
-                              ]?.storageOther?.map(
-                                (
-                                  item:
-                                    | string
-                                    | number
-                                    | readonly string[]
-                                    | undefined,
-                                  index: React.Key | null | undefined
-                                ) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-center space-x-2"
+                              ]?.storageOther?.map((item, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Input
+                                    placeholder="Specify storage..."
+                                    value={item}
+                                    onChange={(e) =>
+                                      updateStorageOther(
+                                        dataType,
+                                        index,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      removeStorageOther(dataType, index)
+                                    }
+                                    className="hover-primary"
                                   >
-                                    <Input
-                                      placeholder="Please specify..."
-                                      value={item}
-                                      onChange={(e) =>
-                                        updateStorageOther(
-                                          dataType,
-                                          index,
-                                          e.target.value
-                                        )
-                                      }
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        removeStorageOther(dataType, index)
-                                      }
-                                      className="hover-primary"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                )
-                              )}
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -729,13 +830,26 @@ export default function Step2({}: Step2Props) {
             )}
 
           {/* Submit Button */}
-          <div className="pt-6">
+          <div className="pt-6 w-full flex items-center justify-end  gap-x-4">
+            <Button
+              onClick={() => router.push(`/projects/${organizationId}/step1`)}
+              variant={"outline"}
+            >
+              previous
+            </Button>
             <Button
               onClick={handleSubmit}
               className="w-full md:w-auto primary-bg hover:opacity-90"
-              size="lg"
+              disabled={updateSecondStepMutation.isPending}
             >
-              Submit Step 2 & View JSON Results
+              {updateSecondStepMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "save & go next"
+              )}
             </Button>
           </div>
         </CardContent>

@@ -26,6 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Link from "next/link";
 
 // Form validation schema
 const loginSchema = z.object({
@@ -146,6 +147,15 @@ export default function LoginForm({ redirectUrl = "/" }: LoginFormProps) {
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
+
+          <div className="px-4">
+            <p className="my-4 ">
+              you don&apos;t have an account?{" "}
+              <Link href={"/sign-up"} className="text-primary font-bold">
+                sign up
+              </Link>
+            </p>
+          </div>
         </Form>
       </CardContent>
     </Card>

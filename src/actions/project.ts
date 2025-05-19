@@ -78,6 +78,12 @@ export const createOrganizationAction = async (formData: FormData) => {
           data: {}, // Default empty JSON or prefill initial structure
         },
       }),
+      db.fourthStep.create({
+        data: {
+          organizationId,
+          data: {},
+        },
+      }),
     ]);
 
     // Step 3: Revalidate cache
