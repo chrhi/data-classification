@@ -19,7 +19,6 @@ export default function AppLayout({
                 <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center">
                   AD
                 </div>
-                <span className="text-sm font-medium text-gray-700">Admin</span>
               </div>
             </div>
           </div>
