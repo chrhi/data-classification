@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// import { formatDistanceToNow } from "date-fns";
 import { Organization } from "@/types";
 import Link from "next/link";
 
@@ -76,35 +75,7 @@ export const columns: ColumnDef<Organization>[] = [
       );
     },
   },
-  // {
-  //   accessorKey: "created_at",
-  //   header: "Created",
-  //   cell: ({ row }) => {
-  //     const date = new Date(row.getValue("created_at"));
-  //     return (
-  //       <div className="flex flex-col">
-  //         <span className="text-sm">
-  //           {formatDistanceToNow(date, { addSuffix: true })}
-  //         </span>
-  //         <span className="text-xs text-muted-foreground">
-  //           {date.toLocaleDateString()}
-  //         </span>
-  //       </div>
-  //     );
-  //   },
-  // },
-  // {
-  //   accessorKey: "updated_at",
-  //   header: "Last Updated",
-  //   cell: ({ row }) => {
-  //     const date = new Date(row.getValue("updated_at"));
-  //     return (
-  //       <span className="text-sm">
-  //         {formatDistanceToNow(date, { addSuffix: true })}
-  //       </span>
-  //     );
-  //   },
-  // },
+
   {
     id: "actions",
     header: "Actions",
@@ -130,14 +101,10 @@ export const columns: ColumnDef<Organization>[] = [
             <Link href={`/projects/${row.original.id}/step1`}>
               <DropdownMenuItem className="cursor-pointer">
                 <Eye className="mr-2 h-4 w-4" />
-                Continue policy
+                policy
               </DropdownMenuItem>
             </Link>
 
-            <DropdownMenuItem className="cursor-pointer">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer text-red-600">
               <Trash2 className="mr-2 h-4 w-4" />

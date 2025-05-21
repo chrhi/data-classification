@@ -32,6 +32,7 @@ export default function PageViewOrganizations({
       if (!result.success) {
         throw new Error(result.error || "Failed to fetch organizations");
       }
+
       return result.data;
     },
     enabled: !!userId,
@@ -43,6 +44,8 @@ export default function PageViewOrganizations({
     setIsRefreshing(true);
     try {
       await refetch();
+
+      console.log(organizationsResponse);
       toast.success("Organizations refreshed successfully");
     } catch (error) {
       console.log(error);
@@ -168,7 +171,7 @@ export default function PageViewOrganizations({
           </div>
         </div>
       ) : (
-        <DataTable columns={columns} data={organizations} />
+        <DataTable columns={columns} data={organizations ?? []} />
       )}
     </div>
   );
