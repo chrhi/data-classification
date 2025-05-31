@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+// import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,7 @@ const steps = [
 ];
 
 export function ProgressSteps({ projectId }: { projectId: string }) {
+  console.log(projectId);
   const pathname = usePathname();
   const currentStep =
     steps.find((step) => pathname.includes(step.path))?.id || 1;
@@ -55,9 +56,9 @@ export function ProgressSteps({ projectId }: { projectId: string }) {
       {/* Step Circles */}
       <div className="flex justify-between relative z-10 px-6">
         {steps.map((step) => (
-          <Link
+          <div
             key={step.id}
-            href={`/projects/${projectId}/${step.path}`}
+            // href={`/projects/${projectId}/${step.path}`}
             className="flex flex-col items-center group"
           >
             <div
@@ -108,7 +109,7 @@ export function ProgressSteps({ projectId }: { projectId: string }) {
                 right: step.id === totalSteps ? "60px" : "auto",
               }}
             ></div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>
