@@ -66,7 +66,7 @@ export default function Step1({ initialData, organizationId }: Step1Props) {
   const router = useRouter();
 
   const [formData, setFormData] = useState<FormData>(() => {
-    if (initialData) {
+    if (initialData?.data) {
       return {
         primaryObjectives: initialData.data.primaryObjectives.selected,
         primaryObjectivesOther: initialData.data.primaryObjectives.other,

@@ -95,6 +95,7 @@ enum Status {
   ACTIVE
   ARCHIVED
   COMPLETED
+  PENDING  // Add this
 }
 
 enum Role {
