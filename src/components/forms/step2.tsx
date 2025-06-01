@@ -51,6 +51,7 @@ export type Step2Data = {
   selectedDataTypes: string[];
   customDataTypes: string[];
   dataTypeDetails: Record<string, DataTypeDetail>;
+  inventoryData?: any; // New field for uploaded JSON
 };
 
 export type Step2Result = {
@@ -80,6 +81,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
       selectedDataTypes: initialStep2?.selectedDataTypes || [],
       dataTypesOther: initialStep2?.customDataTypes || [],
       dataTypeDetails: initialStep2?.dataTypeDetails || {},
+      inventoryData: initialStep2?.inventoryData || null, // Initialize inventoryData
     };
   });
 
@@ -97,17 +99,16 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
       data: any;
     }) => {
       const res = await updateSecondStepByOrganizationId(organizationId, data);
-
-      console.log(res);
+      return res;
     },
     onSuccess: (data) => {
+
+      console.log(data)
       router.push(`/projects/${organizationId}/step3`);
       toast.success("Step 2 data saved successfully!");
-      console.log("Step 2 saved successfully:", data);
     },
     onError: (error) => {
       toast.error(`Failed to save step 2: ${error.message}`);
-      console.error("Error saving step 2:", error);
     },
   });
 
@@ -298,6 +299,28 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
     }));
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsed = JSON.parse(content);
+        setFormData(prev => ({
+          ...prev,
+          inventoryData: parsed
+        }));
+        toast.success("Inventory uploaded successfully!");
+      } catch (error) {
+        toast.error("Invalid JSON file");
+        console.error("Error parsing JSON:", error);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleSubmit = async () => {
     // Validate form data
     if (!formData.hasInventory) {
@@ -310,6 +333,11 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
       formData.selectedDataTypes.length === 0
     ) {
       toast.error("Please select at least one data type");
+      return;
+    }
+
+    if (formData.hasInventory === "yes" && !formData.inventoryData) {
+      toast.error("Please upload your data inventory JSON file");
       return;
     }
 
@@ -335,6 +363,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
             },
           ])
         ),
+        inventoryData: formData.hasInventory === "yes" ? formData.inventoryData : undefined
       },
       timestamp: new Date().toISOString(),
     };
@@ -345,11 +374,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
         organizationId,
         data: results,
       });
-
-      // Also log for debugging
-      console.log("Step 2 Results:", JSON.stringify(results, null, 2));
     } catch (error) {
-      // Error is already handled in the mutation's onError callback
       console.error("Submission failed:", error);
     }
   };
@@ -394,7 +419,24 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
             <RadioGroup
               value={formData.hasInventory}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, hasInventory: value }))
+                setFormData(prev => {
+                  // Reset relevant states when switching options
+                  if (value === "yes") {
+                    return { 
+                      ...prev, 
+                      hasInventory: value,
+                      selectedDataTypes: [],
+                      dataTypesOther: [],
+                      dataTypeDetails: {}
+                    };
+                  } else {
+                    return { 
+                      ...prev, 
+                      hasInventory: value,
+                      inventoryData: null
+                    };
+                  }
+                })
               }
             >
               <div className="flex items-center space-x-2">
@@ -415,6 +457,35 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
               </div>
             </RadioGroup>
           </div>
+
+          {/* JSON Upload for "Yes" option */}
+          {formData.hasInventory === "yes" && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-lg font-semibold primary-color">
+                  2.2 Upload your data inventory JSON file:
+                </Label>
+                <Input 
+                  type="file" 
+                  accept=".json" 
+                  onChange={handleFileUpload}
+                  className="mt-2"
+                />
+              </div>
+              
+              {/* Display uploaded JSON data */}
+              {formData.inventoryData && (
+                <div className="mt-4">
+                  <Label className="text-lg font-semibold primary-color">
+                    Inventory Data:
+                  </Label>
+                  <pre className="bg-gray-100 p-4 rounded-md overflow-auto text-sm max-h-60">
+                    {JSON.stringify(formData.inventoryData, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Question 2.2 - Data Types */}
           {formData.hasInventory === "no" && (
