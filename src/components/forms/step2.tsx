@@ -73,21 +73,50 @@ interface Step2Props {
 
 export default function Step2({ initialData, organizationId }: Step2Props) {
   const router = useRouter();
+  // Add this at the beginning of your Step2 component's useState hook
   const [formData, setFormData] = useState(() => {
     const initialStep2 = initialData?.step2?.data;
 
+    // Add safety checks
+    const safeInitialStep2 = initialStep2 || {
+      hasInventory: "",
+      selectedDataTypes: [],
+      customDataTypes: [],
+      dataTypeDetails: {},
+      inventoryData: null,
+    };
+
     return {
-      hasInventory: initialStep2?.hasInventory || "",
-      selectedDataTypes: initialStep2?.selectedDataTypes || [],
-      dataTypesOther: initialStep2?.customDataTypes || [],
-      dataTypeDetails: initialStep2?.dataTypeDetails || {},
-      inventoryData: initialStep2?.inventoryData || null, // Initialize inventoryData
+      hasInventory: safeInitialStep2.hasInventory || "",
+      selectedDataTypes: safeInitialStep2.selectedDataTypes || [],
+      dataTypesOther: safeInitialStep2.customDataTypes || [],
+      dataTypeDetails: safeInitialStep2.dataTypeDetails || {},
+      inventoryData: safeInitialStep2.inventoryData || null,
     };
   });
 
+  // Also update the step1Regulations part with safety checks
+  const step1Regulations = [
+    ...(initialData?.step1?.data?.data?.regulations?.selected || []),
+    ...(initialData?.step1?.data?.data?.regulations?.other || []),
+  ];
   const [expandedDataTypes, setExpandedDataTypes] = useState<
     Record<string, boolean>
   >({});
+
+  // Helper function to get data type details safely
+  const getDataTypeDetails = (dataType: string): DataTypeDetail => {
+    return (
+      formData.dataTypeDetails[dataType] || {
+        sensitivity: "",
+        businessImpact: "",
+        hasRegulatory: "",
+        regulations: [],
+        storage: [],
+        storageOther: [],
+      }
+    );
+  };
 
   // React Query mutation for updating step 2
   const updateSecondStepMutation = useMutation({
@@ -102,8 +131,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
       return res;
     },
     onSuccess: (data) => {
-
-      console.log(data)
+      console.log(data);
       router.push(`/projects/${organizationId}/step3`);
       toast.success("Step 2 data saved successfully!");
     },
@@ -111,12 +139,6 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
       toast.error(`Failed to save step 2: ${error.message}`);
     },
   });
-
-  // Get regulations from Step 1 data
-  const step1Regulations = [
-    ...(initialData?.step1?.data.data.regulations.selected || []),
-    ...(initialData?.step1?.data.data.regulations.other || []),
-  ];
 
   const dataTypeOptions = [
     "Données personnelles",
@@ -204,31 +226,36 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
     field: keyof DataTypeDetail,
     value: string | string[]
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      dataTypeDetails: {
-        ...prev.dataTypeDetails,
-        [dataType]: {
-          ...prev.dataTypeDetails[dataType],
-          [field]: value,
+    setFormData((prev) => {
+      // Use the helper function to get current details safely
+      const currentDetails = getDataTypeDetails(dataType);
+
+      return {
+        ...prev,
+        dataTypeDetails: {
+          ...prev.dataTypeDetails,
+          [dataType]: {
+            ...currentDetails,
+            [field]: value,
+          },
         },
-      },
-    }));
+      };
+    });
   };
 
   const addRegulation = (dataType: string) => {
-    const current = formData.dataTypeDetails[dataType]?.regulations || [];
+    const current = getDataTypeDetails(dataType).regulations;
     updateDataTypeDetail(dataType, "regulations", [...current, ""]);
   };
 
   const updateRegulation = (dataType: string, index: number, value: string) => {
-    const current = formData.dataTypeDetails[dataType]?.regulations || [];
+    const current = getDataTypeDetails(dataType).regulations;
     const updated = current.map((item, i) => (i === index ? value : item));
     updateDataTypeDetail(dataType, "regulations", updated);
   };
 
   const removeRegulation = (dataType: string, index: number) => {
-    const current = formData.dataTypeDetails[dataType]?.regulations || [];
+    const current = getDataTypeDetails(dataType).regulations;
     const updated = current.filter((_, i) => i !== index);
     updateDataTypeDetail(dataType, "regulations", updated);
   };
@@ -238,7 +265,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
     option: string,
     checked: boolean
   ) => {
-    const current = formData.dataTypeDetails[dataType]?.storage || [];
+    const current = getDataTypeDetails(dataType).storage;
     const updated = checked
       ? [...current, option]
       : current.filter((item) => item !== option);
@@ -246,7 +273,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
   };
 
   const addStorageOther = (dataType: string) => {
-    const current = formData.dataTypeDetails[dataType]?.storageOther || [];
+    const current = getDataTypeDetails(dataType).storageOther;
     updateDataTypeDetail(dataType, "storageOther", [...current, ""]);
   };
 
@@ -255,13 +282,13 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
     index: number,
     value: string
   ) => {
-    const current = formData.dataTypeDetails[dataType]?.storageOther || [];
+    const current = getDataTypeDetails(dataType).storageOther;
     const updated = current.map((item, i) => (i === index ? value : item));
     updateDataTypeDetail(dataType, "storageOther", updated);
   };
 
   const removeStorageOther = (dataType: string, index: number) => {
-    const current = formData.dataTypeDetails[dataType]?.storageOther || [];
+    const current = getDataTypeDetails(dataType).storageOther;
     const updated = current.filter((_, i) => i !== index);
     updateDataTypeDetail(dataType, "storageOther", updated);
   };
@@ -308,9 +335,9 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
       try {
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          inventoryData: parsed
+          inventoryData: parsed,
         }));
         toast.success("Inventory uploaded successfully!");
       } catch (error) {
@@ -363,7 +390,8 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
             },
           ])
         ),
-        inventoryData: formData.hasInventory === "yes" ? formData.inventoryData : undefined
+        inventoryData:
+          formData.hasInventory === "yes" ? formData.inventoryData : undefined,
       },
       timestamp: new Date().toISOString(),
     };
@@ -419,21 +447,21 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
             <RadioGroup
               value={formData.hasInventory}
               onValueChange={(value) =>
-                setFormData(prev => {
+                setFormData((prev) => {
                   // Reset relevant states when switching options
                   if (value === "yes") {
-                    return { 
-                      ...prev, 
+                    return {
+                      ...prev,
                       hasInventory: value,
                       selectedDataTypes: [],
                       dataTypesOther: [],
-                      dataTypeDetails: {}
+                      dataTypeDetails: {},
                     };
                   } else {
-                    return { 
-                      ...prev, 
+                    return {
+                      ...prev,
                       hasInventory: value,
-                      inventoryData: null
+                      inventoryData: null,
                     };
                   }
                 })
@@ -465,14 +493,14 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
                 <Label className="text-lg font-semibold primary-color">
                   2.2 Upload your data inventory JSON file:
                 </Label>
-                <Input 
-                  type="file" 
-                  accept=".json" 
+                <Input
+                  type="file"
+                  accept=".json"
                   onChange={handleFileUpload}
                   className="mt-2"
                 />
               </div>
-              
+
               {/* Display uploaded JSON data */}
               {formData.inventoryData && (
                 <div className="mt-4">
@@ -500,7 +528,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {dataTypeOptions.map((dataType, index) => (
+                {dataTypeOptions?.map((dataType, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <Checkbox
                       id={`datatype-${index}`}
@@ -569,7 +597,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
 
           {/* Data Type Details */}
           {formData.hasInventory === "no" &&
-            formData.selectedDataTypes.length > 0 && (
+            formData?.selectedDataTypes.length > 0 && (
               <div className="space-y-6">
                 <div className="border-t pt-6">
                   <h3 className="text-lg font-semibold primary-color mb-4">
@@ -581,202 +609,274 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
                   </p>
                 </div>
 
-                {formData.selectedDataTypes.map((dataType) => (
-                  <Card
-                    key={dataType}
-                    className={`${
-                      expandedDataTypes[dataType] ? "expanded-section" : ""
-                    }`}
-                  >
-                    <CardHeader
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => toggleExpanded(dataType)}
+                {formData?.selectedDataTypes.map((dataType) => {
+                  const details = getDataTypeDetails(dataType);
+
+                  return (
+                    <Card
+                      key={dataType}
+                      className={`${
+                        expandedDataTypes[dataType] ? "expanded-section" : ""
+                      }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base primary-color">
-                          {dataType}
-                        </CardTitle>
-                        {expandedDataTypes[dataType] ? (
-                          <ChevronUp className="h-5 w-5 primary-color" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 primary-color" />
-                        )}
-                      </div>
-                    </CardHeader>
-
-                    {expandedDataTypes[dataType] && (
-                      <CardContent className="space-y-6">
-                        {/* Sensitivity */}
-                        <div className="space-y-3">
-                          <Label className="font-medium">
-                            2.3 How sensitive is the {dataType}?
-                          </Label>
-                          <RadioGroup
-                            value={
-                              formData.dataTypeDetails[dataType]?.sensitivity ||
-                              ""
-                            }
-                            onValueChange={(value) =>
-                              updateDataTypeDetail(
-                                dataType,
-                                "sensitivity",
-                                value
-                              )
-                            }
-                          >
-                            {sensitivityOptions.map((option) => (
-                              <div
-                                key={option.value}
-                                className="flex items-center space-x-2"
-                              >
-                                <RadioGroupItem
-                                  value={option.value}
-                                  id={`${dataType}-sensitivity-${option.value}`}
-                                  className="primary-border"
-                                />
-                                <Label
-                                  htmlFor={`${dataType}-sensitivity-${option.value}`}
-                                >
-                                  {option.label}
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
+                      <CardHeader
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => toggleExpanded(dataType)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base primary-color">
+                            {dataType}
+                          </CardTitle>
+                          {expandedDataTypes[dataType] ? (
+                            <ChevronUp className="h-5 w-5 primary-color" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 primary-color" />
+                          )}
                         </div>
+                      </CardHeader>
 
-                        {/* Business Impact */}
-                        <div className="space-y-3">
-                          <Label className="font-medium">
-                            2.4 Business impact assessment
-                          </Label>
-                          <RadioGroup
-                            value={
-                              formData.dataTypeDetails[dataType]
-                                ?.businessImpact || ""
-                            }
-                            onValueChange={(value) =>
-                              updateDataTypeDetail(
-                                dataType,
-                                "businessImpact",
-                                value
-                              )
-                            }
-                          >
-                            {businessImpactOptions.map((option) => (
-                              <div
-                                key={option.value}
-                                className="flex items-center space-x-2"
-                              >
-                                <RadioGroupItem
-                                  value={option.value}
-                                  id={`${dataType}-impact-${option.value}`}
-                                  className="primary-border"
-                                />
-                                <Label
-                                  htmlFor={`${dataType}-impact-${option.value}`}
-                                >
-                                  {option.label}
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
-                        </div>
-
-                        {/* Regulatory Protection */}
-                        <div className="space-y-3">
-                          <Label className="font-medium">
-                            2.5 Regulatory Protection
-                          </Label>
-                          <RadioGroup
-                            value={
-                              formData.dataTypeDetails[dataType]
-                                ?.hasRegulatory || ""
-                            }
-                            onValueChange={(value) =>
-                              updateDataTypeDetail(
-                                dataType,
-                                "hasRegulatory",
-                                value
-                              )
-                            }
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem
-                                value="yes"
-                                id={`${dataType}-regulatory-yes`}
-                                className="primary-border"
-                              />
-                              <Label htmlFor={`${dataType}-regulatory-yes`}>
-                                Yes
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem
-                                value="no"
-                                id={`${dataType}-regulatory-no`}
-                                className="primary-border"
-                              />
-                              <Label htmlFor={`${dataType}-regulatory-no`}>
-                                No
-                              </Label>
-                            </div>
-                          </RadioGroup>
-
-                          {formData.dataTypeDetails[dataType]?.hasRegulatory ===
-                            "yes" && (
-                            <div className="space-y-2 ml-6">
-                              <Label className="text-sm font-medium">
-                                Applicable Regulations
-                              </Label>
-                              {step1Regulations.map((regulation, index) => (
+                      {expandedDataTypes[dataType] && (
+                        <CardContent className="space-y-6">
+                          {/* Sensitivity */}
+                          <div className="space-y-3">
+                            <Label className="font-medium">
+                              2.3 How sensitive is the {dataType}?
+                            </Label>
+                            <RadioGroup
+                              value={details.sensitivity}
+                              onValueChange={(value) =>
+                                updateDataTypeDetail(
+                                  dataType,
+                                  "sensitivity",
+                                  value
+                                )
+                              }
+                            >
+                              {sensitivityOptions.map((option) => (
                                 <div
-                                  key={index}
+                                  key={option.value}
                                   className="flex items-center space-x-2"
                                 >
-                                  <Checkbox
-                                    id={`${dataType}-regulation-${index}`}
-                                    checked={formData.dataTypeDetails[
-                                      dataType
-                                    ]?.regulations.includes(regulation)}
-                                    onCheckedChange={(checked) => {
-                                      const current =
-                                        formData.dataTypeDetails[dataType]
-                                          ?.regulations || [];
-                                      const updated = checked
-                                        ? [...current, regulation]
-                                        : current.filter(
-                                            (r) => r !== regulation
-                                          );
-                                      updateDataTypeDetail(
-                                        dataType,
-                                        "regulations",
-                                        updated
-                                      );
-                                    }}
+                                  <RadioGroupItem
+                                    value={option.value}
+                                    id={`${dataType}-sensitivity-${option.value}`}
                                     className="primary-border"
                                   />
                                   <Label
-                                    htmlFor={`${dataType}-regulation-${index}`}
-                                    className="text-sm cursor-pointer"
+                                    htmlFor={`${dataType}-sensitivity-${option.value}`}
                                   >
-                                    {regulation}
+                                    {option.label}
                                   </Label>
                                 </div>
                               ))}
-                              {formData.dataTypeDetails[dataType]?.regulations
-                                .filter((r) => !step1Regulations.includes(r))
-                                .map((regulation, index) => (
+                            </RadioGroup>
+                          </div>
+
+                          {/* Business Impact */}
+                          <div className="space-y-3">
+                            <Label className="font-medium">
+                              2.4 Business impact assessment
+                            </Label>
+                            <RadioGroup
+                              value={details.businessImpact}
+                              onValueChange={(value) =>
+                                updateDataTypeDetail(
+                                  dataType,
+                                  "businessImpact",
+                                  value
+                                )
+                              }
+                            >
+                              {businessImpactOptions.map((option) => (
+                                <div
+                                  key={option.value}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <RadioGroupItem
+                                    value={option.value}
+                                    id={`${dataType}-impact-${option.value}`}
+                                    className="primary-border"
+                                  />
+                                  <Label
+                                    htmlFor={`${dataType}-impact-${option.value}`}
+                                  >
+                                    {option.label}
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+
+                          {/* Regulatory Protection */}
+                          <div className="space-y-3">
+                            <Label className="font-medium">
+                              2.5 Regulatory Protection
+                            </Label>
+                            <RadioGroup
+                              value={details.hasRegulatory}
+                              onValueChange={(value) =>
+                                updateDataTypeDetail(
+                                  dataType,
+                                  "hasRegulatory",
+                                  value
+                                )
+                              }
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem
+                                  value="yes"
+                                  id={`${dataType}-regulatory-yes`}
+                                  className="primary-border"
+                                />
+                                <Label htmlFor={`${dataType}-regulatory-yes`}>
+                                  Yes
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem
+                                  value="no"
+                                  id={`${dataType}-regulatory-no`}
+                                  className="primary-border"
+                                />
+                                <Label htmlFor={`${dataType}-regulatory-no`}>
+                                  No
+                                </Label>
+                              </div>
+                            </RadioGroup>
+
+                            {details.hasRegulatory === "yes" && (
+                              <div className="space-y-2 ml-6">
+                                <Label className="text-sm font-medium">
+                                  Applicable Regulations
+                                </Label>
+                                {step1Regulations.map((regulation, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center space-x-2"
+                                  >
+                                    <Checkbox
+                                      id={`${dataType}-regulation-${index}`}
+                                      checked={details.regulations.includes(
+                                        regulation
+                                      )}
+                                      onCheckedChange={(checked) => {
+                                        const current = details.regulations;
+                                        const updated = checked
+                                          ? [...current, regulation]
+                                          : current.filter(
+                                              (r) => r !== regulation
+                                            );
+                                        updateDataTypeDetail(
+                                          dataType,
+                                          "regulations",
+                                          updated
+                                        );
+                                      }}
+                                      className="primary-border"
+                                    />
+                                    <Label
+                                      htmlFor={`${dataType}-regulation-${index}`}
+                                      className="text-sm cursor-pointer"
+                                    >
+                                      {regulation}
+                                    </Label>
+                                  </div>
+                                ))}
+                                {details.regulations
+                                  ?.filter((r) => !step1Regulations.includes(r))
+                                  ?.map((regulation, index) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center space-x-2"
+                                    >
+                                      <Input
+                                        placeholder="Custom regulation..."
+                                        value={regulation}
+                                        onChange={(e) =>
+                                          updateRegulation(
+                                            dataType,
+                                            index + step1Regulations.length,
+                                            e.target.value
+                                          )
+                                        }
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          removeRegulation(
+                                            dataType,
+                                            index + step1Regulations.length
+                                          )
+                                        }
+                                        className="hover-primary"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addRegulation(dataType)}
+                                  className="hover-primary"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Custom Regulation
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Storage Location */}
+                          <div className="space-y-3">
+                            <Label className="font-medium">
+                              2.6 Storage Locations
+                            </Label>
+                            <div className="space-y-2">
+                              {storageOptions.map((option, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center space-x-3"
+                                >
+                                  <Checkbox
+                                    id={`${dataType}-storage-${index}`}
+                                    checked={details.storage.includes(option)}
+                                    onCheckedChange={(checked) =>
+                                      handleStorageChange(
+                                        dataType,
+                                        option,
+                                        !!checked
+                                      )
+                                    }
+                                    className="primary-border"
+                                  />
+                                  <Label
+                                    htmlFor={`${dataType}-storage-${index}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {option}
+                                  </Label>
+                                </div>
+                              ))}
+
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium">
+                                  Other Storage Locations
+                                </Label>
+                                {details.storageOther?.map((item, index) => (
                                   <div
                                     key={index}
                                     className="flex items-center space-x-2"
                                   >
                                     <Input
-                                      placeholder="Custom regulation..."
-                                      value={regulation}
+                                      placeholder="Specify storage..."
+                                      value={item}
                                       onChange={(e) =>
-                                        updateRegulation(
+                                        updateStorageOther(
                                           dataType,
-                                          index + step1Regulations.length,
+                                          index,
                                           e.target.value
                                         )
                                       }
@@ -786,10 +886,7 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
                                       variant="outline"
                                       size="sm"
                                       onClick={() =>
-                                        removeRegulation(
-                                          dataType,
-                                          index + step1Regulations.length
-                                        )
+                                        removeStorageOther(dataType, index)
                                       }
                                       className="hover-primary"
                                     >
@@ -797,106 +894,23 @@ export default function Step2({ initialData, organizationId }: Step2Props) {
                                     </Button>
                                   </div>
                                 ))}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addRegulation(dataType)}
-                                className="hover-primary"
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Custom Regulation
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Storage Location */}
-                        <div className="space-y-3">
-                          <Label className="font-medium">
-                            2.6 Storage Locations
-                          </Label>
-                          <div className="space-y-2">
-                            {storageOptions.map((option, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center space-x-3"
-                              >
-                                <Checkbox
-                                  id={`${dataType}-storage-${index}`}
-                                  checked={
-                                    formData.dataTypeDetails[
-                                      dataType
-                                    ]?.storage.includes(option) || false
-                                  }
-                                  onCheckedChange={(checked) =>
-                                    handleStorageChange(
-                                      dataType,
-                                      option,
-                                      !!checked
-                                    )
-                                  }
-                                  className="primary-border"
-                                />
-                                <Label
-                                  htmlFor={`${dataType}-storage-${index}`}
-                                  className="text-sm cursor-pointer"
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addStorageOther(dataType)}
+                                  className="hover-primary"
                                 >
-                                  {option}
-                                </Label>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Other Storage
+                                </Button>
                               </div>
-                            ))}
-
-                            <div className="space-y-2">
-                              <Label className="text-sm font-medium">
-                                Other Storage Locations
-                              </Label>
-                              {formData.dataTypeDetails[
-                                dataType
-                              ]?.storageOther?.map((item, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <Input
-                                    placeholder="Specify storage..."
-                                    value={item}
-                                    onChange={(e) =>
-                                      updateStorageOther(
-                                        dataType,
-                                        index,
-                                        e.target.value
-                                      )
-                                    }
-                                    className="flex-1"
-                                  />
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      removeStorageOther(dataType, index)
-                                    }
-                                    className="hover-primary"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addStorageOther(dataType)}
-                                className="hover-primary"
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Other Storage
-                              </Button>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
               </div>
             )}
 

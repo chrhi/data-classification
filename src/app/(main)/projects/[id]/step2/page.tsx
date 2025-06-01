@@ -23,8 +23,9 @@ export default async function Page({ params }: PageProps) {
       <ProgressSteps projectId={id} />
 
       <Step2
-        //@ts-expect-error this is a typo error
-        initialData={{ step1: step1, step2: step2?.data }}
+        // Fix: Pass step2 directly, not step2?.data
+        //@ts-expect-error this is an error
+        initialData={{ step1: step1, step2: step2 }}
         organizationId={id}
       />
     </MaxWidthWrapper>
