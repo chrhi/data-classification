@@ -1,6 +1,6 @@
 "use server";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "@/lib/db";
 
 // ===== First Step =====
@@ -16,26 +16,22 @@ export const getFirstStepByOrganizationId = async (organizationId: string) => {
 
   // Ensure the data property exists and has the expected structure
   return {
-    step: 1,
-    title: "Organization Assessment",
-    data: {
-      data: result.data || {
-        primaryObjectives: {
-          selected: [],
-          other: [],
-        },
-        organizationSize: "",
-        stakeholders: {
-          selected: [],
-          other: [],
-        },
-        regulations: {
-          selected: [],
-          other: [],
-        },
+    ...result,
+    data: result.data || {
+      primaryObjectives: {
+        selected: [],
+        other: [],
+      },
+      organizationSize: "",
+      stakeholders: {
+        selected: [],
+        other: [],
+      },
+      regulations: {
+        selected: [],
+        other: [],
       },
     },
-    timestamp: result.createdAt?.toISOString() || new Date().toISOString(),
   };
 };
 

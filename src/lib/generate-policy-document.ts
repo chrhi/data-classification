@@ -1,542 +1,1338 @@
-// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// // @ts-ignore
+import {
+  Document,
+  Packer,
+  Paragraph,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  AlignmentType,
+  TextRun,
+  HeadingLevel,
+  BorderStyle,
+  ShadingType,
+  UnderlineType,
+} from "docx";
 
-// /* eslint-disable @typescript-eslint/no-unused-vars */
-// import {
-//   Document,
-//   Packer,
-//   Paragraph,
-//   TextRun,
-//   HeadingLevel,
-//   AlignmentType,
-//   Table,
-//   TableRow,
-//   TableCell,
-//   WidthType,
-//   BorderStyle,
-// } from "docx";
+interface TableRow2 {
+  level: string;
+  definition: string;
+}
 
-// export interface PolicyData {
-//   objective: string;
-//   stakeholders: string[];
-//   businessProcesses: string[];
-//   dataTypes: string[];
-//   departments: string[];
-//   hasDataInventory: boolean | null;
-//   dataInventoryLink: string;
-//   needsGuidance: boolean | null;
-//   dataValueAssessment: string[];
-//   businessImpacts: Record<string, string>;
-//   sensitivityLevels: string[];
-//   customClassification: {
-//     [key: string]: {
-//       name: string;
-//       description: string;
-//       examples: string;
-//     };
-//   };
-//   organizationName: string;
-//   version: string;
-//   approvalRoles: string[];
-// }
+interface ClassificationReferenceRow {
+  level: string;
+  sensativityLevel?: string;
+  businessImpact?: string;
+  Regulation?: string;
+  description: string;
+  example: string;
+}
 
-// export async function generatePolicyDocument(
-//   policyData: PolicyData
-// ): Promise<Blob> {
-//   // Helper function to create section headers
+interface DataCategoryRow {
+  category: string;
+  description: string;
+  examples: string;
+  classification: string;
+}
 
-//   const createSectionHeader = (
-//     text: string,
-//     //@ts-expect-error this is a type error
-//     level: HeadingLevel = HeadingLevel.HEADING_1
-//   ) => {
-//     return new Paragraph({
-//       text,
-//       heading: level,
-//       spacing: { before: 400, after: 200 },
-//     });
-//   };
+interface DataClassificationPolicyProps {
+  purpose: string;
+  Scope: string;
+  RolesAndResponsabilites: string;
+  dataClassificationLevels: TableRow2[];
+  classificationReference: ClassificationReferenceRow[];
+  dataCategories: DataCategoryRow[];
+}
 
-//   // Helper function to create bullet points
-//   const createBulletPoint = (text: string) => {
-//     return new Paragraph({
-//       text,
-//       bullet: { level: 0 },
-//       spacing: { before: 100, after: 100 },
-//     });
-//   };
+export async function generateDataClassificationPolicy(
+  data: DataClassificationPolicyProps
+): Promise<Blob> {
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          // Title
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Data Classification Policy",
+                bold: true,
+                size: 32,
+                color: "663399",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+          }),
 
-//   // Helper function to create normal text
-//   const createNormalText = (text: string) => {
-//     return new Paragraph({
-//       children: [new TextRun(text)],
-//       spacing: { before: 100, after: 100 },
-//     });
-//   };
+          // Purpose Section
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Purpose",
+                bold: true,
+                size: 24,
+                color: "663399",
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun(data.purpose)],
+            spacing: { after: 300 },
+          }),
 
-//   // Helper function to format impact level with color
-//   const getImpactFormatting = (level: string) => {
-//     let color = "#000000";
-//     switch (level.toLowerCase()) {
-//       case "critical":
-//         color = "#DC2626"; // Red
-//         break;
-//       case "high":
-//         color = "#EA580C"; // Orange
-//         break;
-//       case "moderate":
-//         color = "#CA8A04"; // Yellow
-//         break;
-//       case "low":
-//         color = "#16A34A"; // Green
-//         break;
-//     }
-//     return { color, bold: true };
-//   };
+          // Scope Section
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Scope",
+                bold: true,
+                size: 24,
+                color: "663399",
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun(data.Scope)],
+            spacing: { after: 300 },
+          }),
 
-//   // Create the document structure
-//   const doc = new Document({
-//     sections: [
-//       {
-//         properties: {},
-//         children: [
-//           // Title Page
-//           new Paragraph({
-//             children: [
-//               new TextRun({
-//                 text: "DATA CLASSIFICATION POLICY",
-//                 bold: true,
-//                 size: 48,
-//               }),
-//             ],
-//             alignment: AlignmentType.CENTER,
-//             spacing: { before: 400, after: 400 },
-//           }),
+          // Roles and Responsibilities Section
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Roles and Responsibilities",
+                bold: true,
+                size: 24,
+                color: "663399",
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun(data.RolesAndResponsabilites)],
+            spacing: { after: 300 },
+          }),
 
-//           new Paragraph({
-//             children: [
-//               new TextRun({
-//                 text: policyData.organizationName || "Organization Name",
-//                 size: 32,
-//               }),
-//             ],
-//             alignment: AlignmentType.CENTER,
-//             spacing: { before: 200, after: 200 },
-//           }),
+          // Policy Roles Header
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Policy Roles",
+                bold: true,
+                size: 24,
+                color: "663399",
+                underline: {
+                  type: UnderlineType.SINGLE,
+                },
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 600, after: 400 },
+          }),
 
-//           new Paragraph({
-//             children: [
-//               new TextRun({
-//                 text: `Version ${policyData.version}`,
-//                 italics: true,
-//                 size: 24,
-//               }),
-//             ],
-//             alignment: AlignmentType.CENTER,
-//             spacing: { before: 200, after: 800 },
-//           }),
+          // Data Classification Level Table
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Data Classification Level",
+                bold: true,
+                size: 20,
+                color: "663399",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
 
-//           new Paragraph({
-//             children: [
-//               new TextRun({
-//                 text: `Generated on: ${new Date().toLocaleDateString()}`,
-//                 size: 20,
-//               }),
-//             ],
-//             alignment: AlignmentType.CENTER,
-//             spacing: { before: 400 },
-//           }),
+          new Table({
+            width: {
+              size: 100,
+              type: WidthType.PERCENTAGE,
+            },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Level",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: {
+                      size: 30,
+                      type: WidthType.PERCENTAGE,
+                    },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Definition",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: {
+                      size: 70,
+                      type: WidthType.PERCENTAGE,
+                    },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...data.dataClassificationLevels.map(
+                (item) =>
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: item.level,
+                                bold: true,
+                                color: "663399",
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.definition)],
+                          }),
+                        ],
+                      }),
+                    ],
+                  })
+              ),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
 
-//           // Page break
-//           new Paragraph({
-//             children: [new TextRun("")],
-//             pageBreakBefore: true,
-//           }),
+          // Classification Guidelines
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Classification Level Guidelines",
+                bold: true,
+                size: 18,
+                color: "663399",
+              }),
+            ],
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun(
+                "Recommended classification assignment based on standard norms:"
+              ),
+            ],
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Public: ",
+                bold: true,
+                color: "663399",
+              }),
+              new TextRun(
+                "None/Low sensitivity, None/Low impact, No regulations"
+              ),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Internal: ",
+                bold: true,
+                color: "663399",
+              }),
+              new TextRun(
+                "Low/Medium sensitivity, Low/Medium impact, minimal/no regulations"
+              ),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Confidential: ",
+                bold: true,
+                color: "663399",
+              }),
+              new TextRun(
+                "Medium/High sensitivity, Medium/High impact, regulatory protection"
+              ),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Restricted: ",
+                bold: true,
+                color: "663399",
+              }),
+              new TextRun(
+                "High sensitivity, High impact, critical regulations or business-critical"
+              ),
+            ],
+            spacing: { after: 400 },
+          }),
 
-//           // 1. Executive Summary
-//           createSectionHeader("1. Executive Summary", HeadingLevel.HEADING_1),
-//           createNormalText(
-//             "This Data Classification Policy establishes a framework for classifying, handling, and protecting data assets within the organization. The policy ensures appropriate security measures are applied based on data sensitivity and business value."
-//           ),
+          // Classification Reference Table
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Classification Reference Table",
+                bold: true,
+                size: 20,
+                color: "663399",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
 
-//           // 2. Policy Objective
-//           createSectionHeader("2. Policy Objective", HeadingLevel.HEADING_1),
-//           createNormalText(
-//             policyData.objective ||
-//               "Define comprehensive data classification standards to protect organizational data assets."
-//           ),
+          new Table({
+            width: {
+              size: 100,
+              type: WidthType.PERCENTAGE,
+            },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Classification Level",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Sensitivity Level",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "7A4CB8",
+                    },
+                    width: { size: 17, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Business Impact",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "7A4CB8",
+                    },
+                    width: { size: 17, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Regulation",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "7A4CB8",
+                    },
+                    width: { size: 17, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Description",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 17, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Example",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 17, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...data.classificationReference.map(
+                (item) =>
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: item.level,
+                                bold: true,
+                                color: "663399",
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun(item.sensativityLevel || ""),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.businessImpact || "")],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.Regulation || "")],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.description)],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.example)],
+                          }),
+                        ],
+                      }),
+                    ],
+                  })
+              ),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
 
-//           // 3. Scope and Stakeholders
-//           createSectionHeader(
-//             "3. Scope and Stakeholders",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createSectionHeader("3.1 Stakeholders", HeadingLevel.HEADING_2),
-//           createNormalText(
-//             "This policy applies to the following stakeholders:"
-//           ),
-//           ...policyData.stakeholders.map((stakeholder) =>
-//             createBulletPoint(stakeholder)
-//           ),
+          // Description Section
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Description",
+                bold: true,
+                size: 24,
+                color: "663399",
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 600, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun(
+                "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Aperiam neque et doloremque impedit nam itaque cupiditate in optio voluptate ut explicabo quasi est possimus accusamus totam similique, magni illo veniam."
+              ),
+            ],
+            spacing: { after: 300 },
+          }),
 
-//           createSectionHeader("3.2 Departments", HeadingLevel.HEADING_2),
-//           createNormalText(
-//             "The following departments are covered under this policy:"
-//           ),
-//           ...policyData.departments.map((dept) => createBulletPoint(dept)),
+          // Data Categories Table
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Data Categories",
+                bold: true,
+                size: 20,
+                color: "663399",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
 
-//           createSectionHeader("3.3 Business Processes", HeadingLevel.HEADING_2),
-//           createNormalText(
-//             "This policy governs data handling in these business processes:"
-//           ),
-//           ...policyData.businessProcesses.map((process) =>
-//             createBulletPoint(process)
-//           ),
+          new Table({
+            width: {
+              size: 100,
+              type: WidthType.PERCENTAGE,
+            },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Category",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Description",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Examples",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Classification",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...data.dataCategories.map(
+                (item) =>
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: item.category,
+                                bold: true,
+                                color: "663399",
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.description)],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.examples)],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(item.classification)],
+                          }),
+                        ],
+                      }),
+                    ],
+                  })
+              ),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
 
-//           // 4. Data Classification Framework
-//           createSectionHeader(
-//             "4. Data Classification Framework",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createNormalText(
-//             "The organization uses the following data classification levels:"
-//           ),
+          // Process Data Rules Section
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Process Data Rules",
+                bold: true,
+                size: 24,
+                color: "663399",
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 600, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun(
+                "Process to data must be controlled according to it's class the table below outlines"
+              ),
+            ],
+            spacing: { after: 300 },
+          }),
 
-//           // Classification table
-//           new Table({
-//             width: { size: 100, type: WidthType.PERCENTAGE },
-//             rows: [
-//               // Header row
-//               new TableRow({
-//                 children: [
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({
-//                             text: "Classification Level",
-//                             bold: true,
-//                           }),
-//                         ],
-//                       }),
-//                     ],
-//                     width: { size: 25, type: WidthType.PERCENTAGE },
-//                   }),
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Description", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                     width: { size: 40, type: WidthType.PERCENTAGE },
-//                   }),
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Examples", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                     width: { size: 35, type: WidthType.PERCENTAGE },
-//                   }),
-//                 ],
-//               }),
-//               // Data rows
-//               ...Object.entries(policyData.customClassification).map(
-//                 ([key, classification]) =>
-//                   new TableRow({
-//                     children: [
-//                       new TableCell({
-//                         children: [
-//                           new Paragraph({
-//                             children: [
-//                               new TextRun({
-//                                 text: classification.name,
-//                                 bold: true,
-//                               }),
-//                             ],
-//                           }),
-//                         ],
-//                       }),
-//                       new TableCell({
-//                         children: [
-//                           new Paragraph({
-//                             children: [new TextRun(classification.description)],
-//                           }),
-//                         ],
-//                       }),
-//                       new TableCell({
-//                         children: [
-//                           new Paragraph({
-//                             children: [new TextRun(classification.examples)],
-//                           }),
-//                         ],
-//                       }),
-//                     ],
-//                   })
-//               ),
-//             ],
-//             borders: {
-//               top: { style: BorderStyle.SINGLE, size: 1 },
-//               bottom: { style: BorderStyle.SINGLE, size: 1 },
-//               left: { style: BorderStyle.SINGLE, size: 1 },
-//               right: { style: BorderStyle.SINGLE, size: 1 },
-//               insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
-//               insideVertical: { style: BorderStyle.SINGLE, size: 1 },
-//             },
-//           }),
+          // Access Control Matrix Table
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Access Control Matrix",
+                bold: true,
+                size: 20,
+                color: "663399",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
 
-//           // 5. Data Inventory Management
-//           createSectionHeader(
-//             "5. Data Inventory Management",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createNormalText(
-//             `Data Inventory Status: ${
-//               policyData.hasDataInventory ? "Available" : "Not Available"
-//             }`
-//           ),
+          new Table({
+            width: {
+              size: 100,
+              type: WidthType.PERCENTAGE,
+            },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Classification Level",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Access Rights",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Approval Required",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Authentication",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Access Review Frequency",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Static data rows
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Public",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Everyone (incl. external)")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("None")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("None")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Not applicable")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Internal",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("All employees")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Manager (optional)")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Username/password")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Annually")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Confidential",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Specific roles only")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Data Owner")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("MFA recommended")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Every 6 months")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Restricted",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Minimal personnel")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Data Owner + CISO")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("MFA required")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Quarterly")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
 
-//           ...(policyData.hasDataInventory && policyData.dataInventoryLink
-//             ? [
-//                 createNormalText(
-//                   `Data Inventory Reference: ${policyData.dataInventoryLink}`
-//                 ),
-//               ]
-//             : []),
+          // Encryption and Data Protection Section
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "4.3 Encryption and Data Protection",
+                bold: true,
+                size: 24,
+                color: "663399",
+              }),
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 600, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun(
+                "Encryption must be applied to protect data from unauthorized access, especially during storage and transmission. The level of encryption required depends on the data classification as outlined below:"
+              ),
+            ],
+            spacing: { after: 300 },
+          }),
 
-//           // 6. Data Value Assessment
-//           createSectionHeader(
-//             "6. Data Value Assessment",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createNormalText(
-//             "The following criteria are used to assess data value:"
-//           ),
-//           ...policyData.dataValueAssessment.map((criteria) =>
-//             createBulletPoint(criteria)
-//           ),
+          // Encryption Requirements Table
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Encryption Requirements",
+                bold: true,
+                size: 20,
+                color: "663399",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
 
-//           // 7. Business Impact Analysis
-//           createSectionHeader(
-//             "7. Business Impact Analysis",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createNormalText(
-//             "The potential business impacts and their severity levels are assessed as follows:"
-//           ),
+          new Table({
+            width: {
+              size: 100,
+              type: WidthType.PERCENTAGE,
+            },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Classification Level",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 33, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Encryption at Rest",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 33, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Encryption in Transit",
+                            bold: true,
+                            color: "FFFFFF",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                      }),
+                    ],
+                    shading: {
+                      type: ShadingType.SOLID,
+                      color: "663399",
+                    },
+                    width: { size: 34, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Static data rows
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Public",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Not required")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Not required")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Internal",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Recommended")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Required (e.g., HTTPS)")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Confidential",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Required")],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Required")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: "Restricted",
+                            bold: true,
+                            color: "663399",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun(
+                            "Strong encryption required (e.g., AES-256)"
+                          ),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun("Enforced via TLS 1.2+")],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
+        ],
+      },
+    ],
+  });
 
-//           // Business impacts table
-//           new Table({
-//             width: { size: 100, type: WidthType.PERCENTAGE },
-//             rows: [
-//               new TableRow({
-//                 children: [
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Impact Type", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                     width: { size: 70, type: WidthType.PERCENTAGE },
-//                   }),
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Severity Level", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                     width: { size: 30, type: WidthType.PERCENTAGE },
-//                   }),
-//                 ],
-//               }),
-//               ...Object.entries(policyData.businessImpacts).map(
-//                 ([impact, level]) =>
-//                   new TableRow({
-//                     children: [
-//                       new TableCell({
-//                         children: [
-//                           new Paragraph({ children: [new TextRun(impact)] }),
-//                         ],
-//                       }),
-//                       new TableCell({
-//                         children: [
-//                           new Paragraph({
-//                             children: [
-//                               new TextRun({
-//                                 text: level.toUpperCase(),
-//                                 ...getImpactFormatting(level),
-//                               }),
-//                             ],
-//                           }),
-//                         ],
-//                       }),
-//                     ],
-//                   })
-//               ),
-//             ],
-//             borders: {
-//               top: { style: BorderStyle.SINGLE, size: 1 },
-//               bottom: { style: BorderStyle.SINGLE, size: 1 },
-//               left: { style: BorderStyle.SINGLE, size: 1 },
-//               right: { style: BorderStyle.SINGLE, size: 1 },
-//               insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
-//               insideVertical: { style: BorderStyle.SINGLE, size: 1 },
-//             },
-//           }),
+  // Generate and return the document as a Blob
+  const buffer = await Packer.toBuffer(doc);
 
-//           // 8. Implementation Guidelines
-//           createSectionHeader(
-//             "8. Implementation Guidelines",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createNormalText(
-//             "All data must be classified according to this framework and handled accordingly. Regular reviews should be conducted to ensure compliance and update classifications as needed."
-//           ),
+  return new Blob([buffer as unknown as BlobPart], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+}
 
-//           // 9. Compliance and Governance
-//           createSectionHeader(
-//             "9. Compliance and Governance",
-//             HeadingLevel.HEADING_1
-//           ),
-//           createNormalText(
-//             "This policy is approved and maintained by the following roles:"
-//           ),
-//           ...policyData.approvalRoles.map((role) => createBulletPoint(role)),
+// Usage example:
+/*
+const sampleData = {
+  purpose: "This policy establishes a framework for classifying data based on its sensitivity and importance to the organization.",
+  Scope: "This policy applies to all employees, contractors, and third parties who handle organizational data.",
+  RolesAndResponsabilites: "All personnel are responsible for identifying and classifying data according to this policy.",
+  dataClassificationLevels: [
+    {
+      level: "Public",
+      definition: "Information that can be freely shared without risk to the organization."
+    },
+    {
+      level: "Internal",
+      definition: "Information intended for use within the organization."
+    }
+  ],
+  classificationReference: [
+    {
+      level: "Public",
+      sensativityLevel: "None/Low",
+      businessImpact: "None/Low",
+      Regulation: "None",
+      description: "No harm if disclosed",
+      example: "Marketing materials"
+    }
+  ],
+  dataCategories: [
+    {
+      category: "Personal Data",
+      description: "Information relating to identifiable individuals",
+      examples: "Names, email addresses, phone numbers",
+      classification: "Confidential"
+    }
+  ]
+};
 
-//           // 10. Document Control
-//           createSectionHeader("10. Document Control", HeadingLevel.HEADING_1),
-//           new Table({
-//             width: { size: 100, type: WidthType.PERCENTAGE },
-//             rows: [
-//               new TableRow({
-//                 children: [
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Version", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                   }),
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [new TextRun(policyData.version)],
-//                       }),
-//                     ],
-//                   }),
-//                 ],
-//               }),
-//               new TableRow({
-//                 children: [
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Creation Date", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                   }),
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun(new Date().toLocaleDateString()),
-//                         ],
-//                       }),
-//                     ],
-//                   }),
-//                 ],
-//               }),
-//               new TableRow({
-//                 children: [
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [
-//                           new TextRun({ text: "Organization", bold: true }),
-//                         ],
-//                       }),
-//                     ],
-//                   }),
-//                   new TableCell({
-//                     children: [
-//                       new Paragraph({
-//                         children: [new TextRun(policyData.organizationName)],
-//                       }),
-//                     ],
-//                   }),
-//                 ],
-//               }),
-//             ],
-//             borders: {
-//               top: { style: BorderStyle.SINGLE, size: 1 },
-//               bottom: { style: BorderStyle.SINGLE, size: 1 },
-//               left: { style: BorderStyle.SINGLE, size: 1 },
-//               right: { style: BorderStyle.SINGLE, size: 1 },
-//               insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
-//               insideVertical: { style: BorderStyle.SINGLE, size: 1 },
-//             },
-//           }),
-//         ],
-//       },
-//     ],
-//   });
-
-//   // Generate the document buffer
-//   const buffer = await Packer.toBuffer(doc);
-
-//   return (
-//     //@ts-expect-error this is a
-//     new Blob([buffer], {
-//       type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-//     })
-//   );
-// }
-
-// // Helper function to trigger download in browser
-// export function downloadPolicyDocument(
-//   blob: Blob,
-//   organizationName: string,
-//   version: string
-// ) {
-//   const url = URL.createObjectURL(blob);
-//   const a = document.createElement("a");
-//   const filename = `${organizationName.replace(
-//     /\s+/g,
-//     "_"
-//   )}_Data_Classification_Policy_v${version}.docx`;
-
-//   a.href = url;
-//   a.download = filename;
-//   document.body.appendChild(a);
-//   a.click();
-//   document.body.removeChild(a);
-//   URL.revokeObjectURL(url);
-// }
-
-// // Usage example function
-// export async function generateAndDownloadPolicy(policyData: PolicyData) {
-//   try {
-//     const blob = await generatePolicyDocument(policyData);
-//     downloadPolicyDocument(
-//       blob,
-//       policyData.organizationName,
-//       policyData.version
-//     );
-//     return { success: true };
-//   } catch (error) {
-//     console.error("Error generating policy document:", error);
-//     return { success: false, error };
-//   }
-// }
+// Generate document
+generateDataClassificationPolicy(sampleData).then(blob => {
+  // Create download link
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Data_Classification_Policy.docx';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+*/

@@ -118,6 +118,7 @@ export default function Step4({
       );
     },
     onSuccess: () => {
+      router.push(`/projects/${organizationId}/generate-doc`);
       toast(
         "Access controls and security measures have been saved successfully."
       );
@@ -367,6 +368,36 @@ export default function Step4({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
+          {/* Additional information box */}
+          <div className="mt-4 p-4 bg-gray-50 rounded-md">
+            <h4 className="font-semibold primary-color mb-2">
+              Recommended Security Measures
+            </h4>
+            <p className="text-sm text-gray-600 mb-2">
+              Suggested security measures by classification level:
+            </p>
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li>
+                <span className="font-medium">Public:</span> Basic protection,
+                typically no encryption needed except for web traffic (HTTPS).
+              </li>
+              <li>
+                <span className="font-medium">Internal:</span> Standard
+                encryption for transit (TLS 1.3), basic access controls.
+              </li>
+              <li>
+                <span className="font-medium">Confidential:</span> Strong
+                encryption both at rest (AES-256) and in transit (TLS 1.3),
+                role-based access controls.
+              </li>
+              <li>
+                <span className="font-medium">Restricted:</span> Maximum
+                protection with multiple encryption layers (AES-256, BitLocker),
+                strict access controls, and additional security measures.
+              </li>
+            </ul>
+          </div>
+
           {/* Question 4.1 - Access Permissions */}
           <div className="space-y-4">
             <div>
@@ -558,36 +589,6 @@ export default function Step4({
             </Table>
           </div>
 
-          {/* Additional information box */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-md">
-            <h4 className="font-semibold primary-color mb-2">
-              Recommended Security Measures
-            </h4>
-            <p className="text-sm text-gray-600 mb-2">
-              Suggested security measures by classification level:
-            </p>
-            <ul className="text-sm text-gray-600 space-y-2">
-              <li>
-                <span className="font-medium">Public:</span> Basic protection,
-                typically no encryption needed except for web traffic (HTTPS).
-              </li>
-              <li>
-                <span className="font-medium">Internal:</span> Standard
-                encryption for transit (TLS 1.3), basic access controls.
-              </li>
-              <li>
-                <span className="font-medium">Confidential:</span> Strong
-                encryption both at rest (AES-256) and in transit (TLS 1.3),
-                role-based access controls.
-              </li>
-              <li>
-                <span className="font-medium">Restricted:</span> Maximum
-                protection with multiple encryption layers (AES-256, BitLocker),
-                strict access controls, and additional security measures.
-              </li>
-            </ul>
-          </div>
-
           {/* Submit Button */}
           <div className="pt-6 w-full flex items-center justify-end  gap-x-4">
             <Button
@@ -607,7 +608,7 @@ export default function Step4({
                   Saving...
                 </>
               ) : (
-                "save "
+                "save & next"
               )}
             </Button>
           </div>

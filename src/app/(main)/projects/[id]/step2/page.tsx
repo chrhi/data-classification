@@ -25,7 +25,7 @@ export default async function Page({ params }: PageProps) {
       <Step2
         // Fix: Pass step2 directly, not step2?.data
         //@ts-expect-error this is an error
-        initialData={{ step1: step1, step2: step2 }}
+        initialData={{ step1: step1?.data, step2: step2?.data }}
         organizationId={id}
       />
     </MaxWidthWrapper>

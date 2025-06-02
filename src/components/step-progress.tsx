@@ -30,6 +30,12 @@ const steps = [
     description: "Set security measures",
     path: "step4",
   },
+  {
+    id: 5,
+    name: "Document Generation",
+    description: "Generate policy documents",
+    path: "step5",
+  },
 ];
 
 export function ProgressSteps({ projectId }: { projectId: string }) {
@@ -40,77 +46,84 @@ export function ProgressSteps({ projectId }: { projectId: string }) {
   const totalSteps = steps.length;
 
   return (
-    <div className="relative py-8 px-4 bg-white mt-8 mb-2 rounded-xl shadow-sm border border-purple-100 mx-6">
-      {/* Progress Line with animated gradient */}
-      <div className="absolute top-[3.25rem] left-0 w-full h-2 bg-gray-200 rounded-full mx-auto px-8">
+    <div className="relative py-12 px-8 bg-white/80 backdrop-blur-sm mt-8 mb-2 rounded-2xl border border-gray-100 mx-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      {/* Progress Line */}
+      <div className="absolute top-[3.5rem] left-12 right-12 h-0.5 bg-gray-100 rounded-full">
         <div
-          className="h-full bg-gradient-to-r from-purple-400 via-violet-500 to-fuchsia-500 rounded-full shadow-lg transition-all duration-500 ease-out"
+          className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-700 ease-out"
           style={{
             width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`,
           }}
-        >
-          <div className="absolute right-0 -top-1 w-4 h-4 rounded-full bg-white shadow-md border-2 border-violet-500 transition-all duration-500"></div>
-        </div>
+        />
       </div>
 
       {/* Step Circles */}
-      <div className="flex justify-between relative z-10 px-6">
+      <div className="flex justify-between relative z-10">
         {steps.map((step) => (
           <div
             key={step.id}
-            // href={`/projects/${projectId}/${step.path}`}
-            className="flex flex-col items-center group"
+            className="flex flex-col items-center group cursor-pointer"
           >
+            {/* Circle */}
             <div
               className={cn(
-                "flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-500 transform",
+                "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-500 transform hover:scale-105",
                 currentStep === step.id
-                  ? "border-[#792a9f] bg-[#792a9f] text-white scale-110 shadow-lg"
+                  ? "border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
                   : currentStep > step.id
-                  ? "border-violet-500 bg-violet-500 text-white shadow-md"
-                  : "border-gray-300 bg-white text-gray-500 shadow-sm"
+                  ? "border-purple-500 bg-purple-500 text-white shadow-md shadow-purple-500/20"
+                  : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
               )}
             >
               {currentStep > step.id ? (
-                <CheckCircle className="h-6 w-6" />
+                <CheckCircle className="h-5 w-5" />
               ) : (
-                <span className="text-base font-bold">{step.id}</span>
+                <span className="text-sm font-semibold">{step.id}</span>
               )}
             </div>
-            <span
-              className={cn(
-                "mt-3 text-sm font-semibold transition-all duration-300",
-                currentStep === step.id
-                  ? "text-[#792a9f] scale-105"
-                  : "text-gray-600"
-              )}
-            >
-              {step.name}
-            </span>
-            <span
-              className={cn(
-                "text-xs max-w-[120px] text-center transition-all duration-300",
-                currentStep === step.id ? "text-[#792a9f]" : "text-gray-500",
-                "hidden md:block mt-1"
-              )}
-            >
-              {step.description}
-            </span>
-            {/* Step connecting line animation */}
-            <div
-              className={cn(
-                "absolute h-0.5 top-6 -z-10 transition-all duration-300",
-                step.id < totalSteps ? "block" : "hidden",
-                step.id < currentStep ? "bg-violet-500" : "bg-gray-200"
-              )}
-              style={{
-                width: "calc(100% - 120px)",
-                left: step.id === 1 ? "60px" : "auto",
-                right: step.id === totalSteps ? "60px" : "auto",
-              }}
-            ></div>
+
+            {/* Step Name */}
+            <div className="mt-4 text-center">
+              <span
+                className={cn(
+                  "block text-sm font-medium transition-all duration-300",
+                  currentStep === step.id
+                    ? "text-indigo-600"
+                    : currentStep > step.id
+                    ? "text-purple-600"
+                    : "text-gray-500"
+                )}
+              >
+                {step.name}
+              </span>
+
+              {/* Description - only show on larger screens */}
+              <span
+                className={cn(
+                  "block text-xs mt-1 max-w-[100px] transition-all duration-300 leading-relaxed",
+                  currentStep === step.id
+                    ? "text-indigo-500"
+                    : currentStep > step.id
+                    ? "text-purple-500"
+                    : "text-gray-400",
+                  "hidden sm:block"
+                )}
+              >
+                {step.description}
+              </span>
+            </div>
+
+            {/* Active indicator dot */}
+            {currentStep === step.id && (
+              <div className="absolute -bottom-2 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+            )}
           </div>
         ))}
+      </div>
+
+      {/* Step counter */}
+      <div className="absolute top-4 right-6 text-xs text-gray-400 font-medium">
+        {currentStep} of {totalSteps}
       </div>
     </div>
   );

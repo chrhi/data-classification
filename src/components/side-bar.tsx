@@ -31,7 +31,7 @@ export default function Sidebar() {
     { name: "Home", path: "/", icon: <Home className="w-5 h-5" /> },
 
     {
-      name: "Prganizations",
+      name: "Organizations",
       path: "/projects",
       icon: <FolderKanban className="w-5 h-5" />,
     },
@@ -75,23 +75,6 @@ export default function Sidebar() {
           })}
         </ul>
       </nav>
-
-      {/* User Account Section */}
-      <div className="absolute bottom-0 w-full px-4 py-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-3 px-4">
-          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-            <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          </div>
-          <div className="font-poppins">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              User Name
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              user@example.com
-            </p>
-          </div>
-        </div>
-      </div>
     </>
   );
 

@@ -1,3 +1,4 @@
+import { AIChatSheet } from "@/components/ai-sheet";
 import Sidebar from "@/components/side-bar";
 
 export default function AppLayout({
@@ -8,8 +9,8 @@ export default function AppLayout({
   return (
     <>
       <Sidebar />
-      <main className="flex-1 ml-[250px] min-h-screen">
-        <header className="bg-white border-b py-4 px-6 sticky top-0 z-10">
+      <main className="flex-1 mt-[70px] md:mt-0 md:ml-[250px] min-h-screen">
+        <header className="bg-white border-b py-4 px-6 sticky top-0 z-[10]">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <h1 className="text-xl font-semibold text-gray-800">
               Policy Management Dashboard
@@ -19,6 +20,8 @@ export default function AppLayout({
                 <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center">
                   AD
                 </div>
+
+                <AIChatSheet />
               </div>
             </div>
           </div>
