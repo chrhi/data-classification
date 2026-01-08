@@ -12,9 +12,12 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "My AI App";
 
-if (!OPENROUTER_API_KEY) {
-  throw new Error("OPENROUTER_API_KEY environment variable is required");
-}
+// Helper function to check if API key is available
+const checkApiKey = () => {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY environment variable is required. Please set it in your environment variables.");
+  }
+};
 
 /**
  * Send a prompt to the AI model and get a response
@@ -33,6 +36,9 @@ export async function sendPromptToAI(
   } = {}
 ): Promise<AIResponse> {
   try {
+    // Check API key availability
+    checkApiKey();
+    
     // Validate input
     if (!prompt || prompt.trim().length === 0) {
       return {
@@ -139,6 +145,9 @@ export async function sendConversationToAI(
   } = {}
 ): Promise<AIResponse> {
   try {
+    // Check API key availability
+    checkApiKey();
+    
     // Validate input
     if (!messages || messages.length === 0) {
       return {

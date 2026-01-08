@@ -24,7 +24,10 @@ const createAccountSchema = z.object({
 
 // Create a secret key for token signing and validation
 const getSecretKey = async () => {
-  const secret = process.env.JWT_SECRET || "fallback_secret";
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET environment variable is required for security");
+  }
   return new TextEncoder().encode(secret);
 };
 

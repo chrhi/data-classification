@@ -59,12 +59,16 @@ async function verifyToken(token: string | undefined): Promise<boolean> {
 
   try {
     // Get JWT secret from environment variables
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET || "fallback_secret"
-    );
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error("JWT_SECRET environment variable is not set");
+      return false;
+    }
+
+    const secretKey = new TextEncoder().encode(secret);
 
     // Verify token
-    await jwtVerify(token, secret);
+    await jwtVerify(token, secretKey);
     return true;
   } catch (error) {
     console.log(error);
